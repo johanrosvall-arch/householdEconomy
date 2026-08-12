@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # The Prisma client is generated code the API's types depend on.
+      - run: pnpm --filter @household/api db:generate
+
+      - run: pnpm typecheck
+
+      # The domain suite is pure functions over plain data, so no database
+      # service is needed here.
+      - run: pnpm test

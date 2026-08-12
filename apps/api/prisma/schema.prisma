@@ -1,0 +1,406 @@
+// Household economy — data model.
+//
+// Money is stored as Int minor units (öre). Dates that represent a calendar
+// day (transaction booking date, budget period) are stored as strings in
+// YYYY-MM-DD / YYYY-MM form so they cannot drift with timezones; timestamps
+// that represent an instant use DateTime.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  displayName  String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  memberships HouseholdMember[]
+  sessions    Session[]
+
+  @@map("users")
+}
+
+model Session {
+  id               String   @id @default(cuid())
+  userId           String
+  refreshTokenHash String   @unique
+  userAgent        String?
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  createdAt        DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+/// A household is the sharing boundary. Every financial record hangs off one,
+/// and all queries are scoped by it.
+model Household {
+  id                String   @id @default(cuid())
+  name              String
+  baseCurrency      String   @default("SEK")
+  /// Day of month the household considers the start of its budget cycle.
+  /// 25 suits households paid on the 25th, which is the Swedish norm.
+  budgetStartDay    Int      @default(1)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  members      HouseholdMember[]
+  accounts     Account[]
+  connections  Connection[]
+  transactions Transaction[]
+  categories   Category[]
+  rules        CategoryRule[]
+  budgets      Budget[]
+  goals        SavingsGoal[]
+  importBatches ImportBatch[]
+
+  @@map("households")
+}
+
+enum HouseholdRole {
+  owner
+  member
+  viewer
+}
+
+model HouseholdMember {
+  id          String        @id @default(cuid())
+  householdId String
+  userId      String
+  role        HouseholdRole @default(member)
+  joinedAt    DateTime      @default(now())
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([householdId, userId])
+  @@index([userId])
+  @@map("household_members")
+}
+
+// ---------------------------------------------------------------------------
+// Bank connections
+// ---------------------------------------------------------------------------
+
+enum ConnectionStatus {
+  pending
+  active
+  expired
+  error
+  revoked
+}
+
+/// One authorised link to one institution via one aggregation provider.
+model Connection {
+  id              String           @id @default(cuid())
+  householdId     String
+  /// Adapter key: 'mock', 'gocardless', 'tink', ...
+  provider        String
+  institutionId   String
+  institutionName String
+  logoUrl         String?
+  status          ConnectionStatus @default(pending)
+  /// Provider-side identifier for the consent/requisition.
+  externalRef     String?
+  /// Encrypted provider credentials (access tokens). Never returned by the API.
+  secretCiphertext String?
+  /// PSD2 consent lapses — usually 90 days — after which the user re-authorises.
+  consentExpiresAt DateTime?
+  lastSyncedAt    DateTime?
+  lastError       String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  accounts  Account[]
+
+  @@index([householdId])
+  @@map("connections")
+}
+
+// ---------------------------------------------------------------------------
+// Accounts and transactions
+// ---------------------------------------------------------------------------
+
+enum AccountType {
+  checking
+  savings
+  credit_card
+  bnpl
+  loan
+  investment
+  cash
+}
+
+model Account {
+  id                String      @id @default(cuid())
+  householdId       String
+  connectionId      String?
+  name              String
+  type              AccountType
+  currency          String      @default("SEK")
+  /// Current balance in minor units. Maintained incrementally on write and
+  /// recomputed from the ledger on every sync.
+  balance           Int         @default(0)
+  mask              String?
+  institutionName   String?
+  /// Provider-side account id, used to match on re-sync.
+  externalId        String?
+  includeInNetWorth Boolean     @default(true)
+  lastSyncedAt      DateTime?
+  archivedAt        DateTime?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  household    Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  connection   Connection?   @relation(fields: [connectionId], references: [id], onDelete: SetNull)
+  transactions Transaction[]
+  goals        SavingsGoal[]
+
+  @@unique([connectionId, externalId])
+  @@index([householdId])
+  @@map("accounts")
+}
+
+/// Categories are seeded per household from the shared taxonomy, so a
+/// household can rename or add to them without affecting anyone else.
+model Category {
+  id          String  @id @default(cuid())
+  householdId String
+  slug        String
+  name        String
+  groupSlug   String
+  groupName   String
+  /// 'expense' | 'income' | 'transfer'
+  kind        String
+  color       String
+  icon        String?
+  isFixed     Boolean @default(false)
+  isCustom    Boolean @default(false)
+  sortOrder   Int     @default(0)
+  archivedAt  DateTime?
+
+  household    Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  budgetLines  BudgetLine[]
+  rules        CategoryRule[]
+
+  @@unique([householdId, slug])
+  @@index([householdId])
+  @@map("categories")
+}
+
+enum TransactionSource {
+  bank_sync
+  file_import
+  manual
+}
+
+model Transaction {
+  id          String            @id @default(cuid())
+  householdId String
+  accountId   String
+  categoryId  String?
+
+  /// Booking date, YYYY-MM-DD.
+  date        String
+  valueDate   String?
+  /// Denormalised YYYY-MM for cheap period grouping.
+  period      String
+  /// Minor units. Negative = money out.
+  amount      Int
+  currency    String            @default("SEK")
+  /// Verbatim text from the bank or file — never rewritten.
+  description String
+  /// Cleaned merchant name derived from the description.
+  merchant    String?
+  /// Counterparty account/reference when the source provides one.
+  counterparty String?
+  notes       String?
+  tags        String[]          @default([])
+  source      TransactionSource
+  /// True once a human set the category; blocks automatic re-classification.
+  categoryLocked Boolean        @default(false)
+  pending     Boolean           @default(false)
+
+  /// Stable hash of (account, date, amount, description) used to dedupe
+  /// re-imports and overlapping bank sync windows.
+  dedupeHash  String
+  /// Provider-side transaction id, when available — the strongest dedupe key.
+  externalId  String?
+
+  /// Both legs of a detected internal transfer share this id.
+  transferPairId String?
+
+  importBatchId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  household   Household    @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  account     Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category    Category?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  importBatch ImportBatch? @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
+
+  @@unique([accountId, dedupeHash])
+  @@unique([accountId, externalId])
+  @@index([householdId, period])
+  @@index([householdId, date])
+  @@index([accountId, date])
+  @@index([categoryId])
+  @@index([transferPairId])
+  @@map("transactions")
+}
+
+// ---------------------------------------------------------------------------
+// Categorisation rules
+// ---------------------------------------------------------------------------
+
+model CategoryRule {
+  id          String  @id @default(cuid())
+  householdId String
+  categoryId  String
+  /// 'description' | 'merchant' | 'counterparty'
+  field       String  @default("description")
+  /// 'contains' | 'equals' | 'starts_with' | 'regex'
+  matchType   String  @default("contains")
+  pattern     String
+  minAmount   Int?
+  maxAmount   Int?
+  /// Restrict the rule to one account, e.g. "card payments on the Amex".
+  accountId   String?
+  priority    Int     @default(100)
+  matchCount  Int     @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  category  Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([householdId, priority])
+  @@map("category_rules")
+}
+
+// ---------------------------------------------------------------------------
+// Budgets
+// ---------------------------------------------------------------------------
+
+model Budget {
+  id             String  @id @default(cuid())
+  householdId    String
+  /// YYYY-MM
+  period         String
+  expectedIncome Int?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  household Household    @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  lines     BudgetLine[]
+
+  @@unique([householdId, period])
+  @@map("budgets")
+}
+
+model BudgetLine {
+  id         String  @id @default(cuid())
+  budgetId   String
+  categoryId String
+  /// Positive minor units.
+  limit      Int
+  rollover   Boolean @default(false)
+
+  budget   Budget   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([budgetId, categoryId])
+  @@map("budget_lines")
+}
+
+// ---------------------------------------------------------------------------
+// Savings goals
+// ---------------------------------------------------------------------------
+
+model SavingsGoal {
+  id                  String    @id @default(cuid())
+  householdId         String
+  name                String
+  targetAmount        Int
+  currency            String    @default("SEK")
+  targetDate          String?
+  /// When set, progress tracks this account's balance instead of contributions.
+  fundingAccountId    String?
+  monthlyContribution Int?
+  color               String?
+  icon                String?
+  completedAt         DateTime?
+  archivedAt          DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  household      Household          @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  fundingAccount Account?           @relation(fields: [fundingAccountId], references: [id], onDelete: SetNull)
+  contributions  GoalContribution[]
+
+  @@index([householdId])
+  @@map("savings_goals")
+}
+
+model GoalContribution {
+  id        String   @id @default(cuid())
+  goalId    String
+  amount    Int
+  date      String
+  note      String?
+  createdAt DateTime @default(now())
+
+  goal SavingsGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([goalId])
+  @@map("goal_contributions")
+}
+
+// ---------------------------------------------------------------------------
+// File imports
+// ---------------------------------------------------------------------------
+
+enum ImportStatus {
+  parsed
+  committed
+  discarded
+}
+
+/// A staged upload. The parsed rows live here until the user confirms the
+/// column mapping, so a bad mapping never writes junk into the ledger.
+model ImportBatch {
+  id             String       @id @default(cuid())
+  householdId    String
+  accountId      String?
+  filename       String
+  detectedFormat String?
+  /// Parsed rows and detected mapping, held as JSON until commit.
+  payload        Json
+  status         ImportStatus @default(parsed)
+  rowCount       Int          @default(0)
+  importedCount  Int          @default(0)
+  createdAt      DateTime     @default(now())
+  committedAt    DateTime?
+  /// Staged batches are swept after this instant.
+  expiresAt      DateTime
+
+  household    Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@index([householdId])
+  @@map("import_batches")
+}

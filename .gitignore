@@ -1,0 +1,22 @@
+node_modules/
+dist/
+build/
+.expo/
+.expo-shared/
+coverage/
+*.tsbuildinfo
+
+# Environment / secrets — never commit real bank credentials
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Local database volume
+.data/
