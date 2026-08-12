@@ -130,11 +130,15 @@ function buildSlices(
     const meta = findCategory(slug);
     const previousAmount = previous?.get(slug)?.amount ?? null;
 
+    // Swedish display names, matching what `seedCategories` writes to the
+    // database — otherwise the overview disagrees with every other screen.
+    const groupDef = meta ? CATEGORY_GROUPS.find((g) => g.slug === meta.groupSlug) : undefined;
+
     slices.push({
       categorySlug: slug,
-      categoryName: meta?.name ?? slug,
+      categoryName: meta?.nameSv ?? slug,
       groupSlug: meta?.groupSlug ?? 'other',
-      groupName: meta?.groupName ?? 'Other',
+      groupName: groupDef?.nameSv ?? meta?.groupName ?? 'Övrigt',
       color: meta?.color ?? '#CED4DA',
       amount,
       transactionCount: count,
@@ -162,9 +166,9 @@ function aggregateByGroup(slices: readonly CategorySpendSlice[]): CategorySpendS
     const groupDef = CATEGORY_GROUPS.find((g) => g.slug === slice.groupSlug);
     groups.set(slice.groupSlug, {
       categorySlug: slice.groupSlug,
-      categoryName: groupDef?.name ?? slice.groupName,
+      categoryName: groupDef?.nameSv ?? slice.groupName,
       groupSlug: slice.groupSlug,
-      groupName: groupDef?.name ?? slice.groupName,
+      groupName: groupDef?.nameSv ?? slice.groupName,
       color: groupDef?.color ?? slice.color,
       amount: slice.amount,
       transactionCount: slice.transactionCount,

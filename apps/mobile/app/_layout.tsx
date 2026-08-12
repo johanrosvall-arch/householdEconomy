@@ -60,5 +60,16 @@ function AuthGate() {
 
   if (status === 'loading') return <Loading label="Loading your household" />;
 
+  // Do not render the route tree until the URL matches the auth state.
+  //
+  // Redirects happen in an effect, which runs *after* render. Without this
+  // guard a signed-out cold start renders the tab screens for one frame
+  // before the redirect fires, and those screens require a household — so
+  // `useHouseholdId()` throws mid-render. On native the error boundary hides
+  // it; in a browser it is a blank white page.
+  const inAuthGroup = segments[0] === '(auth)';
+  const settled = status === 'signed-in' ? !inAuthGroup : inAuthGroup;
+  if (!settled) return <Loading />;
+
   return <Slot />;
 }

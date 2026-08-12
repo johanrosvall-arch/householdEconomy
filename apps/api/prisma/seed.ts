@@ -116,6 +116,47 @@ async function main(): Promise<void> {
       { householdId: household.id, accountId: account.id, source: 'bank_sync' },
     );
 
+    // Book an opening balance ahead of the history window.
+    //
+    // Balances are derived from the ledger, so without this an account's
+    // balance is just the sum of six months of activity — which for a current
+    // account is roughly "income minus outgoings" and lands deeply negative.
+    // Anchoring to the balance the provider reports makes the seeded data
+    // resemble a real household.
+    //
+    // Categorised as an internal transfer and locked, so it never registers as
+    // income or spending in any total.
+    const target = providerAccount.balance ?? 0;
+    const ledger = await prisma.transaction.aggregate({
+      where: { accountId: account.id },
+      _sum: { amount: true },
+    });
+    const opening = target - (ledger._sum.amount ?? 0);
+
+    if (opening !== 0) {
+      const openingDate = new Date();
+      openingDate.setUTCMonth(openingDate.getUTCMonth() - 7);
+
+      const openingResult = await insertTransactions(
+        [{ date: toDateKey(openingDate), amount: opening, description: 'Ingående saldo' }],
+        { householdId: household.id, accountId: account.id, source: 'manual' },
+      );
+
+      const openingId = openingResult.insertedIds[0];
+      if (openingId) {
+        const transferCategory = await prisma.category.findUnique({
+          where: { householdId_slug: { householdId: household.id, slug: 'internal-transfer' } },
+          select: { id: true },
+        });
+        if (transferCategory) {
+          await prisma.transaction.update({
+            where: { id: openingId },
+            data: { categoryId: transferCategory.id, categoryLocked: true },
+          });
+        }
+      }
+    }
+
     console.log(`  ${account.name}: ${result.imported} transactions imported`);
   }
 

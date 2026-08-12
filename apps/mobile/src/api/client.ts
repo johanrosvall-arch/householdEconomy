@@ -1,4 +1,4 @@
-import * as SecureStore from 'expo-secure-store';
+import { deleteItem, getItem, setItem } from './tokenStore';
 import type {
   AccountDTO,
   BudgetStatusDTO,
@@ -13,9 +13,9 @@ import type {
 /**
  * Typed API client.
  *
- * Tokens live in SecureStore (Keychain / Android Keystore), never in
- * AsyncStorage — this app's session reads a household's entire financial
- * history, so it deserves the same storage a banking app would use.
+ * Token storage is platform-dependent — Keychain/Keystore on a device,
+ * localStorage in a browser. See `tokenStore.ts` for why, and for what that
+ * costs on web.
  */
 
 const ACCESS_TOKEN_KEY = 'household.accessToken';
@@ -54,20 +54,20 @@ export class ApiError extends Error {
 }
 
 export async function getAccessToken(): Promise<string | null> {
-  return SecureStore.getItemAsync(ACCESS_TOKEN_KEY);
+  return getItem(ACCESS_TOKEN_KEY);
 }
 
 export async function storeTokens(accessToken: string, refreshToken: string): Promise<void> {
   await Promise.all([
-    SecureStore.setItemAsync(ACCESS_TOKEN_KEY, accessToken),
-    SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refreshToken),
+    setItem(ACCESS_TOKEN_KEY, accessToken),
+    setItem(REFRESH_TOKEN_KEY, refreshToken),
   ]);
 }
 
 export async function clearTokens(): Promise<void> {
   await Promise.all([
-    SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY),
-    SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY),
+    deleteItem(ACCESS_TOKEN_KEY),
+    deleteItem(REFRESH_TOKEN_KEY),
   ]);
 }
 
@@ -81,7 +81,7 @@ async function refreshSession(): Promise<boolean> {
   if (refreshInFlight) return refreshInFlight;
 
   refreshInFlight = (async () => {
-    const refreshToken = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
+    const refreshToken = await getItem(REFRESH_TOKEN_KEY);
     if (!refreshToken) return false;
 
     try {

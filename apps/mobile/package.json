@@ -7,7 +7,8 @@
     "start": "expo start",
     "android": "expo start --android",
     "typecheck": "tsc --noEmit",
-    "doctor": "expo-doctor"
+    "doctor": "expo-doctor",
+    "web": "expo start --web"
   },
   "dependencies": {
     "@expo/metro-runtime": "~57.0.9",
@@ -30,6 +31,7 @@
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
     "react-native-svg": "15.15.4",
+    "react-native-web": "~0.21.0",
     "zustand": "^5.0.1"
   },
   "devDependencies": {

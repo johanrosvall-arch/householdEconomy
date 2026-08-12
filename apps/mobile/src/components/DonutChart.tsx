@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native';
-import Svg, { Circle, G } from 'react-native-svg';
+import Svg, { Circle } from 'react-native-svg';
 import { formatMoney, type Currency } from '@household/shared';
 import { theme } from '../theme';
 
@@ -59,32 +59,32 @@ export function DonutChart({
     <View style={{ alignItems: 'center' }}>
       <View style={{ width: size, height: size }}>
         <Svg width={size} height={size}>
-          <G originX={size / 2} originY={size / 2}>
+          <Circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke={theme.color.surfaceRaised}
+            strokeWidth={thickness}
+            fill="none"
+          />
+          {arcs.map((arc, i) => (
             <Circle
+              key={i}
               cx={size / 2}
               cy={size / 2}
               r={radius}
-              stroke={theme.color.surfaceRaised}
+              stroke={arc.color}
               strokeWidth={thickness}
+              strokeDasharray={`${arc.dash} ${arc.gap}`}
+              strokeLinecap="butt"
               fill="none"
+              // Plain SVG rotate(deg cx cy) rather than react-native-svg's
+              // originX/originY/rotation props: on web those are emitted as a
+              // kebab-case `transform-origin` DOM attribute, which React
+              // rejects with a warning on every render.
+              transform={`rotate(${arc.rotation} ${size / 2} ${size / 2})`}
             />
-            {arcs.map((arc, i) => (
-              <Circle
-                key={i}
-                cx={size / 2}
-                cy={size / 2}
-                r={radius}
-                stroke={arc.color}
-                strokeWidth={thickness}
-                strokeDasharray={`${arc.dash} ${arc.gap}`}
-                strokeLinecap="butt"
-                fill="none"
-                originX={size / 2}
-                originY={size / 2}
-                rotation={arc.rotation}
-              />
-            ))}
-          </G>
+          ))}
         </Svg>
 
         <View style={[styles.center, { width: size, height: size }]} pointerEvents="none">

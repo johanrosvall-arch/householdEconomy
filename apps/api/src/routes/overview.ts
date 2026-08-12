@@ -138,7 +138,17 @@ const overviewRoutes: FastifyPluginAsync = async (fastify) => {
 
     const since = addMonths(currentPeriod(), -6);
     const rows = await prisma.transaction.findMany({
-      where: { householdId, period: { gte: since }, amount: { lt: 0 } },
+      where: {
+        householdId,
+        period: { gte: since },
+        amount: { lt: 0 },
+        // Only real spending. A standing 5 000 kr transfer to your own savings
+        // account is regular and looks exactly like a subscription to this
+        // detector, but calling it a "recurring cost" both overstates the
+        // total and contradicts the rule the rest of the app follows: money
+        // moved between your own accounts has not been spent.
+        category: { kind: 'expense' },
+      },
       select: { merchant: true, description: true, amount: true, period: true, date: true },
     });
 

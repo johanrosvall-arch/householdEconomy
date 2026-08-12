@@ -14,9 +14,12 @@
     "lint": "pnpm -r lint",
     "api": "pnpm --filter @household/api dev",
     "mobile": "pnpm --filter @household/mobile start",
+    "web": "pnpm --filter @household/mobile web",
     "db:up": "docker compose up -d postgres",
     "db:migrate": "pnpm --filter @household/api db:migrate",
-    "db:seed": "pnpm --filter @household/api db:seed"
+    "db:deploy": "pnpm --filter @household/api db:deploy",
+    "db:seed": "pnpm --filter @household/api db:seed",
+    "db:reset": "pnpm --filter @household/api db:reset"
   },
   "devDependencies": {
     "typescript": "^5.6.3"

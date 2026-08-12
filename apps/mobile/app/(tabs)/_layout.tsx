@@ -1,5 +1,7 @@
 import { Tabs } from 'expo-router';
 import { Text, type ColorValue } from 'react-native';
+import { useSession } from '../../src/store/session';
+import { Loading } from '../../src/components/ui';
 import { theme } from '../../src/theme';
 
 /**
@@ -8,6 +10,13 @@ import { theme } from '../../src/theme';
  * are the things you set up once and revisit.
  */
 export default function TabsLayout() {
+  const householdId = useSession((s) => s.householdId);
+
+  // Every tab screen calls `useHouseholdId()`, which throws without one.
+  // Holding the tabs back here means that invariant can never be violated,
+  // whatever order auth restore and navigation happen to settle in.
+  if (!householdId) return <Loading />;
+
   return (
     <Tabs
       screenOptions={{

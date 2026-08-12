@@ -9,13 +9,17 @@ import { prisma } from '../prisma.js';
  * touching anyone else's data.
  */
 export async function seedCategories(householdId: string): Promise<number> {
+  // Swedish names are the display names: this is an app for Swedish
+  // households and the whole interface is in Swedish, so showing "Groceries"
+  // next to "Kvar denna månad" reads as a bug. The English `name` in the
+  // taxonomy stays as the developer-facing label.
   const rows = CATEGORY_GROUPS.flatMap((group, groupIndex) =>
     group.categories.map((category, index) => ({
       householdId,
       slug: category.slug,
-      name: category.name,
+      name: category.nameSv,
       groupSlug: group.slug,
-      groupName: group.name,
+      groupName: group.nameSv,
       kind: group.kind,
       color: group.color,
       icon: group.icon,
@@ -26,6 +30,26 @@ export async function seedCategories(householdId: string): Promise<number> {
   );
 
   const result = await prisma.category.createMany({ data: rows, skipDuplicates: true });
+
+  // Refresh the built-in categories so a taxonomy change (a rename, a new
+  // colour) reaches households that already exist. Categories the household
+  // created or renamed itself are marked `isCustom` and left alone.
+  await Promise.all(
+    rows.map((row) =>
+      prisma.category.updateMany({
+        where: { householdId, slug: row.slug, isCustom: false },
+        data: {
+          name: row.name,
+          groupName: row.groupName,
+          color: row.color,
+          icon: row.icon,
+          isFixed: row.isFixed,
+          sortOrder: row.sortOrder,
+        },
+      }),
+    ),
+  );
+
   return result.count;
 }
 

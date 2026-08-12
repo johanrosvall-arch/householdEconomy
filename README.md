@@ -52,6 +52,25 @@ Also note: **Amex and Klarna are not reliably reachable via PSD2 aggregators in
 Sweden.** CSV import is the working route for those, which is why the importer
 is a first-class feature.
 
+## Quickest look: run it in your browser
+
+Expo builds the same codebase for web, so this is the real app — same screens,
+same API client — rendered in Chrome. Not a separate mock-up.
+
+```bash
+pnpm install && pnpm db:up
+cd apps/api && cp .env.example .env     # set JWT_SECRET and ENCRYPTION_KEY
+pnpm db:deploy && pnpm db:seed && cd ../..
+
+pnpm api      # terminal 1 — http://localhost:3000
+pnpm web      # terminal 2 — http://localhost:8081
+```
+
+Sign in as `demo@household.local` / `demo-household-2024`.
+
+Full walkthrough, and what the web build cannot do (bank linking needs a
+native deep link), in [docs/running-in-a-browser.md](docs/running-in-a-browser.md).
+
 ## Running it
 
 Requires Node 20+, pnpm, and Docker (for Postgres). Expo SDK 57.
