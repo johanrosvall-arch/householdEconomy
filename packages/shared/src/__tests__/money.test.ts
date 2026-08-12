@@ -64,6 +64,23 @@ describe('parseAmount', () => {
     expect(parseAmount('0.005')).toBe(1);
     expect(parseAmount('0.004')).toBe(0);
   });
+
+  it('reads a bare 3-decimal group as thousands, per the grouping rule', () => {
+    // Deliberate: "1.005" in a continental-format export is 1 005 kr, not one
+    // krona and half an öre. Bank statements are always 2 decimals, so the
+    // thousands reading is the useful one. A leading zero opts out (see above).
+    expect(parseAmount('1.005')).toBe(100500);
+    expect(parseAmount('0.005')).toBe(1);
+  });
+
+  it('round-trips every öre value in a range without drift', () => {
+    const wrong: number[] = [];
+    for (let minor = 0; minor < 2000; minor++) {
+      const major = (minor / 100).toFixed(2);
+      if (parseAmount(major) !== minor) wrong.push(minor);
+    }
+    expect(wrong).toEqual([]);
+  });
 });
 
 describe('minor/major conversion', () => {
@@ -75,6 +92,35 @@ describe('minor/major conversion', () => {
   it('avoids float drift on values that break naive multiplication', () => {
     expect(toMinorUnits(19.99)).toBe(1999);
     expect(toMinorUnits(1.005)).toBe(101);
+  });
+
+  /**
+   * Regression guard for the original bug. `Math.round(1.005 * 100)` is 100,
+   * not 101, because 1.005 is really 1.00499999999999989 as a double — so a
+   * ledger built on float multiplication drops an öre at magnitudes you cannot
+   * predict. Conversion shifts the decimal point textually instead.
+   *
+   * `x.xx5` is exactly where the two approaches diverge, so sweep the boundary
+   * rather than spot-checking two values.
+   */
+  it('rounds the half-öre boundary exactly, at every magnitude', () => {
+    const wrong: string[] = [];
+    for (let kronor = 0; kronor < 1000; kronor++) {
+      // Number() of the literal, so each case is the same double you would get
+      // from writing `1.005` in source.
+      const value = Number(`${kronor}.005`);
+      const expected = kronor * 100 + 1;
+      if (toMinorUnits(value) !== expected) wrong.push(`${kronor}.005`);
+    }
+    expect(wrong).toEqual([]);
+  });
+
+  it('converts every öre value in a range without drift', () => {
+    const wrong: number[] = [];
+    for (let minor = 0; minor < 2000; minor++) {
+      if (toMinorUnits(minor / 100) !== minor) wrong.push(minor);
+    }
+    expect(wrong).toEqual([]);
   });
 });
 

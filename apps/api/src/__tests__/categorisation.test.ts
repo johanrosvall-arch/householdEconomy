@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { classify, applyRules, reclassifyBatch, type RuleLike } from '../services/categorisation.js';
-import { matchMerchant, normaliseDescription, guessMerchantName } from '../services/merchants.js';
+import {
+  MERCHANT_RULES,
+  matchMerchant,
+  normaliseDescription,
+  guessMerchantName,
+} from '../services/merchants.js';
 
 describe('normaliseDescription', () => {
   it('strips card terminal noise', () => {
@@ -14,6 +19,42 @@ describe('normaliseDescription', () => {
 
   it('collapses whitespace and lowercases', () => {
     expect(normaliseDescription('  ICA   KVANTUM  ')).toBe('ica kvantum');
+  });
+});
+
+/**
+ * Regression guard for a bug that failed completely silently.
+ *
+ * Patterns are matched against `normaliseDescription` output, which is
+ * ASCII-folded — "FÖRSÄKRING" reaches the matcher as "forsakring". So any
+ * pattern containing a Swedish character can never match anything, ever.
+ *
+ * There is a second, sharper trap on top of that: JavaScript's `\b` is defined
+ * over `[A-Za-z0-9_]`, so `/\böverföring\b/` fails even against raw text —
+ * there is no word boundary before `ö`. (Note this only bites when the pattern
+ * *starts or ends* with a non-ASCII letter: `/\bförsäkring\b/` happens to work
+ * on raw text, which makes the trap easy to miss when spot-checking.)
+ *
+ * Either way the failure is silent — no error, no warning, the transaction just
+ * quietly lands in "uncategorised". This test fails the moment someone adds a
+ * pattern with a Swedish character.
+ */
+describe('merchant patterns stay ASCII', () => {
+  it('has no non-ASCII character in any pattern source', () => {
+    const offenders = MERCHANT_RULES.filter((rule) => !/^[\x00-\x7F]*$/.test(rule.match.source)).map(
+      (rule) => `${rule.merchant}: /${rule.match.source}/`,
+    );
+
+    expect(offenders).toEqual([]);
+  });
+
+  it('still matches descriptions that contain Swedish characters', () => {
+    // The behavioural half of the guard: ASCII patterns must actually reach
+    // real bank text, which is not ASCII.
+    expect(matchMerchant('ÖVERFÖRING SPARKONTO')?.category).toBe('internal-transfer');
+    expect(matchMerchant('FÖRSKOLA STOCKHOLMS STAD')?.category).toBe('childcare');
+    expect(matchMerchant('APOTEK HJÄRTAT 559')?.category).toBe('pharmacy');
+    expect(matchMerchant('TRÄNGSELSKATT')?.category).toBe('parking-tolls');
   });
 });
 

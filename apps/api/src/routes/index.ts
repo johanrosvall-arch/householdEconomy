@@ -13,12 +13,19 @@ import goalRoutes from './goals.js';
 import importRoutes from './imports.js';
 import connectionRoutes from './connections.js';
 import overviewRoutes from './overview.js';
+import mockBankRoutes from './mock-bank.js';
 
 const householdParams = z.object({ householdId: z.string() });
 const ruleParams = householdParams.extend({ ruleId: z.string() });
 
 const registerRoutes: FastifyPluginAsync = async (fastify) => {
   await fastify.register(authRoutes, { prefix: '/auth' });
+
+  // Development-only stand-in for a bank's consent page. Never mounted when a
+  // real aggregator is configured.
+  if (fastify.config.BANK_PROVIDER === 'mock') {
+    await fastify.register(mockBankRoutes, { prefix: '/mock-bank' });
+  }
 
   await fastify.register(async (scope) => {
     scope.post('/', async (request, reply) => {

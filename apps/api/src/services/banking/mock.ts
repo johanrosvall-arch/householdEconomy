@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { InstitutionDTO } from '@household/shared';
 import { toDateKey } from '@household/shared';
+import { loadEnv } from '../../env.js';
 import type {
   BankProvider,
   CreateLinkParams,
@@ -77,9 +78,17 @@ export class MockBankProvider implements BankProvider {
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
     const consentExpiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
 
-    // A real provider returns the bank's own authentication URL. The mock
-    // points back at our callback so the flow completes without a browser.
-    const authUrl = `${params.redirectUrl}?ref=${encodeURIComponent(externalRef)}&mock=1`;
+    // A real provider returns the bank's own https authentication page. The
+    // mock must do the same: this URL is opened in a browser, and a browser
+    // cannot navigate to a `householdeconomy://` scheme. Pointing it at our own
+    // consent stub keeps the flow — open page, approve, get redirected back to
+    // the app's deep link — identical to the real one, so the deep-link
+    // plumbing is exercised before a real provider ever depends on it.
+    const base = loadEnv().PUBLIC_API_URL.replace(/\/+$/, '');
+    const authUrl =
+      `${base}/api/v1/mock-bank/consent` +
+      `?ref=${encodeURIComponent(externalRef)}` +
+      `&redirect=${encodeURIComponent(params.redirectUrl)}`;
 
     return { externalRef, authUrl, expiresAt, consentExpiresAt };
   }

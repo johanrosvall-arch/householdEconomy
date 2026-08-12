@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Text } from 'react-native';
+import { Text, type ColorValue } from 'react-native';
 import { theme } from '../../src/theme';
 
 /**
@@ -45,6 +45,8 @@ export default function TabsLayout() {
   );
 }
 
-function TabIcon({ icon, color }: { icon: string; color: string }) {
+// react-navigation hands back a ColorValue (which may be an opaque platform
+// colour), not a plain string.
+function TabIcon({ icon, color }: { icon: string; color: ColorValue }) {
   return <Text style={{ color, fontSize: 20, lineHeight: 24 }}>{icon}</Text>;
 }

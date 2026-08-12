@@ -4,7 +4,7 @@ A mobile app for tracking a Swedish household's income and spending close to
 real time, categorised, with budgets and savings goals.
 
 ```
-apps/mobile      Expo / React Native (iOS + Android)
+apps/mobile      Expo / React Native (Android; iOS needs an Apple account)
 apps/api         Fastify + Prisma + Postgres
 packages/shared  Types, money and date maths, category taxonomy
 ```
@@ -54,7 +54,7 @@ is a first-class feature.
 
 ## Running it
 
-Requires Node 20+, pnpm, and Docker (for Postgres).
+Requires Node 20+, pnpm, and Docker (for Postgres). Expo SDK 57.
 
 ```bash
 pnpm install
@@ -69,7 +69,7 @@ pnpm db:seed                  # demo household with ~6 months of data
 cd ../..
 
 pnpm api                      # http://localhost:3000
-pnpm mobile                   # Expo — press i / a, or scan the QR code
+pnpm mobile                   # Expo — scan the QR code with Expo Go
 ```
 
 Generate the two secrets with:
@@ -86,14 +86,19 @@ email:    demo@household.local
 password: demo-household-2024
 ```
 
-If you run the app on a physical device, point it at your machine rather than
-localhost — set `expo.extra.apiUrl` in `apps/mobile/app.json` to
-`http://<your-lan-ip>:3000/api/v1`.
+On a physical device `localhost` is the phone itself, so point the app at your
+machine: copy `apps/mobile/.env.example` to `.env` and set
+`EXPO_PUBLIC_API_URL` to your LAN or Tailscale address. Set `PUBLIC_API_URL` in
+`apps/api/.env` to match, so the mock bank's consent page is reachable too.
+
+**Getting it onto an Android phone** — including the EAS build and the
+Tailscale setup — is covered step by step in
+[docs/running-on-android.md](docs/running-on-android.md).
 
 ## Tests
 
 ```bash
-pnpm test        # 128 tests, no database required
+pnpm test        # 134 tests, no database required
 pnpm typecheck
 ```
 

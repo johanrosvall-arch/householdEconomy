@@ -31,6 +31,13 @@ const schema = z.object({
   /** Where the bank sends the user back after consent. */
   BANK_REDIRECT_URL: z.string().url().default('householdeconomy://bank-callback'),
 
+  /**
+   * Publicly reachable base URL of this API, as seen by the phone — e.g.
+   * `http://100.x.y.z:3000` over Tailscale. The mock bank's consent page is
+   * served from here, because a browser cannot open a `custom://` scheme.
+   */
+  PUBLIC_API_URL: z.string().url().default('http://localhost:3000'),
+
   /** Max upload size for statement files, bytes. */
   MAX_UPLOAD_BYTES: z.coerce.number().int().default(10 * 1024 * 1024),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),

@@ -1,7 +1,7 @@
 # Architecture
 
 ```
-apps/mobile      Expo / React Native app (iOS + Android)
+apps/mobile      Expo / React Native app (Android target)
 apps/api         Fastify + Prisma + Postgres
 packages/shared  Types, money and date maths, category taxonomy
 ```
@@ -109,8 +109,8 @@ confirm which household ids exist.
 The domain logic is written as pure functions taking plain data, so the test
 suite runs without a database:
 
-- `packages/shared` — amount and date parsing, period maths (33 tests)
+- `packages/shared` — amount and date parsing, period maths (37 tests)
 - `apps/api` — categorisation, import/format detection, budget, goals,
-  transfers, overview (95 tests)
+  transfers, overview (97 tests)
 
 `pnpm test` runs both.

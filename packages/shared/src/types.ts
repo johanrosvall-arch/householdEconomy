@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import type { Currency } from './money.js';
-import type { DateKey, PeriodKey } from './date.js';
+import type { Currency } from './money';
+import type { DateKey, PeriodKey } from './date';
 
 /**
  * Wire types shared between the API and the mobile app. The API validates

@@ -1,4 +1,3 @@
-import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
 import type {
   AccountDTO,
@@ -22,8 +21,25 @@ import type {
 const ACCESS_TOKEN_KEY = 'household.accessToken';
 const REFRESH_TOKEN_KEY = 'household.refreshToken';
 
-const baseUrl: string =
-  (Constants.expoConfig?.extra?.apiUrl as string | undefined) ?? 'http://localhost:3000/api/v1';
+/**
+ * Where the API lives.
+ *
+ * `EXPO_PUBLIC_*` variables are inlined into the bundle at build time, so the
+ * same mechanism works in Expo Go and in an EAS build. It must be an address
+ * the *phone* can reach: `localhost` is the handset itself, so a LAN or
+ * Tailscale address is required on a real device.
+ *
+ * Set it in `apps/mobile/.env` — see `.env.example`.
+ */
+const baseUrl: string = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000/api/v1';
+
+if (__DEV__ && !process.env.EXPO_PUBLIC_API_URL) {
+  console.warn(
+    '[api] EXPO_PUBLIC_API_URL is not set, falling back to localhost. ' +
+      'On a physical device this will fail — set it to your machine\'s LAN or ' +
+      'Tailscale address in apps/mobile/.env and restart the dev server.',
+  );
+}
 
 export class ApiError extends Error {
   constructor(
