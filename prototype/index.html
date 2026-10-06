@@ -159,18 +159,22 @@ button:disabled { cursor: default; }
 .empty { color: var(--muted); font-size: 13.5px; margin: 0; }
 .est-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
 .est-range { font: 700 30px/1 var(--font-display); }
-.tl { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-.tl li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 10px; font-size: 13px; }
-.tl .lane { grid-column: 1 / -1; position: relative; height: 12px; }
-.tl .lane::before { content: ""; position: absolute; left: 0; right: 0; top: 5px; height: 2px; background: var(--line); }
-.tl .mk, .tl .span { position: absolute; top: 0; height: 12px; border: 2px solid var(--ink); background: var(--surface); }
-.tl .mk { width: 12px; border-radius: 50%; }
-.tl .span { border-radius: 6px; min-width: 12px; }
-.tl .good .mk { background: var(--good); border-color: var(--good); }
-.tl .good .span { border-color: var(--good); }
-.tl .bad .mk { background: var(--bad); border-color: var(--bad); }
-.tl .bad .span { border-color: var(--bad); }
-.tl .date { font: 400 12px var(--font-mono); font-variant-numeric: tabular-nums; color: var(--muted); text-align: right; }
+.tl1 { display: grid; gap: 0; }
+.tl1 .line { position: relative; height: 14px; margin-inline: 6px; }
+.tl1 .line::before { content: ""; position: absolute; left: -6px; right: -6px; top: 6px; height: 2px; background: var(--line); }
+.tl1 .mk, .tl1 .span { position: absolute; top: 1px; height: 12px; border: 2px solid var(--ink); background: var(--surface); }
+.tl1 .mk { width: 12px; border-radius: 50%; transform: translateX(-6px); }
+.tl1 .span { border-radius: 6px; min-width: 12px; background: transparent; }
+.tl1 .good.mk { background: var(--good); border-color: var(--good); }
+.tl1 .good.span { border-color: var(--good); }
+.tl1 .bad.mk { background: var(--bad); border-color: var(--bad); }
+.tl1 .bad.span { border-color: var(--bad); }
+.tl1 .labels { position: relative; min-height: 40px; margin-inline: 6px; }
+.tl1 .leader { position: absolute; top: 0; width: 1px; background: var(--line); }
+.tl1 .lab { position: absolute; top: 8px; left: 0; max-width: 140px; font-size: 12px; line-height: 1.3; display: grid; background: var(--surface); z-index: 1; }
+.tl1 .lab.r { text-align: right; }
+.tl1 .lab b { font-weight: 600; }
+.tl1 .lab span { font: 400 11px var(--font-mono); font-variant-numeric: tabular-nums; color: var(--muted); }
 .tl-key { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--muted); margin: 0; }
 .tl-key span { display: inline-flex; align-items: center; gap: 6px; }
 .tl-key i { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--ink); background: var(--surface); }
@@ -689,37 +693,58 @@ button:disabled { cursor: default; }
 
   /* ---------- Panel ---------- */
   /* Milestones on the timeline: each sub-delivery with its date, added as the customer makes choices */
+  /* All sub-deliveries on ONE timeline, added as the customer makes choices. Same-day items share one point. */
   function milestones(e) {
-    const m = [{ name: 'Idag, bedömning gjord', from: TODAY, cls: '' }];
+    const m = [{ name: state.confirmed && state.scenario !== 'C' ? 'Order mottagen' : 'Idag', from: TODAY, cls: state.confirmed && state.scenario !== 'C' ? 'good' : '' }];
     const s = state.slot, dw = state.digWeek;
-    if (state.confirmed && state.scenario !== 'C') m.push({ name: 'Ångerrätten löper ut', from: addDays(TODAY, 14), cls: '' });
-    if (dw) m.push({ name: `${state.digging === 'self' ? 'Ditt schakt klart' : 'Grävning och indragning'}, vecka ${weekNo(dw)}`, from: dw, to: addDays(dw, 4), cls: frostWeek(dw) ? 'bad' : 'good' });
+    if (state.confirmed && state.scenario !== 'C') m.push({ name: 'Ångerrätt slut', from: addDays(TODAY, 14), cls: '' });
+    if (dw) m.push({ name: `${state.digging === 'self' ? 'Ditt schakt' : 'Grävning'} v. ${weekNo(dw)}`, from: dw, to: addDays(dw, 4), cls: frostWeek(dw) ? 'bad' : 'good' });
     if (s) {
-      if (state.scenario === 'A') {
-        m.push({ name: 'Router levereras', from: addBiz(s.date, -1), cls: 'good' }, { name: 'Bredband aktivt', from: s.date, cls: 'good' });
-      } else {
-        m.push({ name: 'Router levereras, cirka', from: addBiz(s.date, -5), cls: 'good' },
-          { name: `Inkoppling i huset, ${s.label.toLowerCase()}`, from: s.date, cls: 'good' }, { name: 'Fiber aktiv', from: s.date, cls: 'good' });
-      }
-      if (state.method) m.push({ name: 'Första fakturan skickas', from: new Date(s.date.getFullYear(), s.date.getMonth() + 1, 1, 12), cls: 'good' });
+      if (state.scenario === 'A') m.push({ name: 'Router levereras', from: addBiz(s.date, -1), cls: 'good' }, { name: 'Bredband aktivt', from: s.date, cls: 'good' });
+      else m.push({ name: 'Router levereras', from: addBiz(s.date, -5), cls: 'good' }, { name: `Inkoppling ${s.label.split(' ')[1]}, fiber aktiv`, from: s.date, cls: 'good' });
+      if (state.method) m.push({ name: 'Första faktura', from: new Date(s.date.getFullYear(), s.date.getMonth() + 1, 1, 12), cls: 'good' });
     } else if (e) {
-      m.push({ name: 'Tidigast klart (preliminärt)', from: e.from, cls: '' }, { name: 'Senast klart (preliminärt)', from: e.to, cls: '' });
+      m.push({ name: 'Tidigast klart', from: e.from, cls: '' }, { name: 'Senast klart', from: e.to, cls: '' });
     }
-    return m.sort((a, b) => a.from - b.from);
+    m.sort((a, b) => a.from - b.from);
+    return m.filter((x, i) => !(i && !x.to && !m[i - 1].to && +x.from === +m[i - 1].from && (m[i - 1].name += ' · ' + x.name)));
   }
   function timeline(e) {
     const m = milestones(e);
     const end = Math.max(...m.map(x => +(x.to || x.from))), span = Math.max(1, end - TODAY);
-    const pct = d => (d - TODAY) / span * 100;
+    const pct = d => ((d - TODAY) / span * 100).toFixed(2);
     const df = { weekday: 'short', day: 'numeric', month: 'short' };
-    return `<ol class="tl" aria-label="Tidslinje med delleveranser">${m.map(x => {
-      const left = pct(x.from), shape = x.to
-        ? `<span class="span" style="left:clamp(0px, ${left}%, calc(100% - 12px));width:max(12px, ${pct(x.to) - left}%)"></span>`
-        : `<span class="mk" style="left:clamp(0px, calc(${left}% - 6px), calc(100% - 12px))"></span>`;
-      const date = x.to ? `${fmt(x.from, { day: 'numeric', month: 'short' })}–${fmt(x.to, df)}` : fmt(x.from, df);
-      return `<li class="${x.cls}"><span class="lane">${shape}</span><span>${x.name}</span><span class="date">${date}</span></li>`;
-    }).join('')}</ol>
+    const marks = m.map(x => x.to
+      ? `<span class="span ${x.cls}" style="left:${pct(x.from)}%;width:${pct(x.to) - pct(x.from)}%"></span>`
+      : `<span class="mk ${x.cls}" style="left:${pct(x.from)}%"></span>`).join('');
+    const labels = m.map(x => {
+      const x0 = x.to ? (+pct(x.from) + +pct(x.to)) / 2 : pct(x.from);
+      const date = x.to ? `${fmt(x.from, { day: 'numeric', month: 'short' })}–${fmt(x.to, { day: 'numeric', month: 'short' })}` : fmt(x.from, df);
+      return `<i class="leader" style="left:${x0}%"></i><div class="lab" data-x="${x0}"><b>${x.name}</b><span>${date}</span></div>`;
+    }).join('');
+    return `<div class="tl1" aria-label="Tidslinje med delleveranser"><div class="line">${marks}</div><div class="labels">${labels}</div></div>
     <p class="tl-key"><span><i></i>Preliminärt</span><span><i class="g"></i>Bokat</span></p>`;
+  }
+  /* Place labels under the line; a label drops to a new row only if it would overlap the one before it */
+  function layoutTimeline() {
+    const box = $('.tl1 .labels');
+    if (!box || !box.clientWidth) return;
+    const W = box.clientWidth, rowEnd = [];
+    let h = 0;
+    box.querySelectorAll('.lab').forEach(l => {
+      const x = l.dataset.x / 100 * W, w = l.offsetWidth;
+      /* Text ends at its own point, so a leader never runs through an earlier label */
+      const left = Math.max(0, x + 1 - w);
+      l.classList.toggle('r', left > 0);
+      let r = rowEnd.findIndex(end => left > end + 10);
+      if (r < 0) { r = rowEnd.length; rowEnd.push(0); }
+      rowEnd[r] = left + w;
+      const top = 10 + r * 40;
+      l.style.left = left + 'px'; l.style.top = top + 'px';
+      l.previousElementSibling.style.height = (top - 2) + 'px';
+      h = Math.max(h, top + l.offsetHeight);
+    });
+    box.style.height = h + 'px';
   }
 
   function render() {
@@ -751,20 +776,16 @@ button:disabled { cursor: default; }
     const money = co.sp || co.connect ? `<div class="totals"><div class="total"><div class="k">Per månad</div><div class="v">${co.sp ? kr(co.monthlyTotal) : 'Ej vald'}</div></div><div class="total"><div class="k">Engång</div><div class="v">${kr(co.connect)}</div></div></div>${co.split ? `<p class="note">Varav ${kr(co.split)}/mån delbetalning i 24 månader.</p>` : ''}` : '';
 
     let status = '';
-    if (state.confirmed && state.scenario !== 'C') {
-      const steps = state.scenario === 'A'
-        ? [['Order mottagen', 'Idag', 'done'], ['Router skickad', fmt(addBiz(state.slot.date, -3)), 'now'], ['Router levererad', fmt(addBiz(state.slot.date, -1)), ''], ['Bredband aktivt', fmt(state.slot.date), '']]
-        : [['Order mottagen', 'Idag', 'done'], ['Ångerrätt löper ut', fmt(addDays(TODAY, 14)), 'now'], [state.digging === 'self' ? 'Ditt schakt klart' : 'Grävning', `Vecka ${weekNo(state.digWeek)}`, ''], ['Router levereras', fmt(addBiz(state.slot.date, -5)), ''], ['Inkoppling', fmt(state.slot.date), ''], ['Fiber aktiv', fmt(state.slot.date), '']];
-      status = `<div class="psec"><h3>Status · <span class="money">${state.orderNo}</span></h3><ul class="status">${steps.map(([t, d, c]) => `<li class="${c}"><span>${t}<small>${d}</small></span></li>`).join('')}</ul></div>`;
-    } else if (state.confirmed) {
-      status = `<div class="psec"><h3>Intresseanmälan · <span class="money">${state.orderNo}</span></h3><ul class="status"><li class="done"><span>Anmälan registrerad<small>Idag</small></span></li><li class="now"><span>Anslutningsgrad i området<small>38 % av 60 % som krävs</small></span></li><li><span>Beslut om utbyggnad<small>Vi meddelar dig</small></span></li></ul></div>`;
+    if (state.confirmed) {
+      status = `<div class="psec"><h3>${state.scenario === 'C' ? 'Intresseanmälan' : 'Order'}</h3><dl class="kv"><dt>${state.scenario === 'C' ? 'Anmälan' : 'Ordernummer'}</dt><dd class="money">${state.orderNo}</dd>${state.scenario === 'C' ? '<dt>Anslutningsgrad i området</dt><dd>38 % av 60 % som krävs</dd>' : ''}</dl></div>`;
     }
 
     $('#pbody').innerHTML = `${stepper}${status}
-      <div class="psec"><h3>Preliminär bedömning</h3>${est}</div>
+      <div class="psec"><h3>${state.slot ? 'Tidslinje' : 'Preliminär bedömning'}</h3>${est}</div>
       <div class="psec"><h3>Beställning</h3>${order}</div>
       ${money ? `<div class="psec"><h3>Kostnader</h3>${money}</div>` : ''}
       <p class="note">Demopriser och fiktiva adresser. Datum räknas från dagens datum.</p>`;
+    layoutTimeline();
   }
 
   /* ---------- Wiring ---------- */
@@ -777,6 +798,8 @@ button:disabled { cursor: default; }
   $('#composer').addEventListener('submit', e => { e.preventDefault(); const v = $('#say').value.trim(); if (!v) return; $('#say').value = ''; freeText(v); });
   $('#human').addEventListener('click', () => { user('Jag vill prata med en person'); human(); });
   if (matchMedia('(max-width: 860px)').matches) $('#panel').open = false;
+  addEventListener('resize', layoutTimeline);
+  $('#panel').addEventListener('toggle', layoutTimeline);
   reset(); start();
 })();
 </script>

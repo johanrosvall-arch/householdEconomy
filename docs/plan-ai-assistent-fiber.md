@@ -39,7 +39,7 @@ Kunden anger adress. Assistenten slår upp nätstatus och ger direkt:
 - **Scenario B, fiber finns i tomtgräns men inte indragen:** 4–8 veckor, medelsäkerhet. Kräver grävning på tomten, håltagning och inkoppling.
 - **Scenario C, inget fibernät i området:** 6–12 månader, låg säkerhet. Kräver utbyggnad som beror på hur många grannar som anmäler intresse. Kunden erbjuds intresseanmälan och ett tillfälligt mobilt bredband.
 
-Panelen har en tidslinje där varje delleverans läggs ut med sitt datum utskrivet så snart kunden gjort valet: grävvecka, routerleverans, inkoppling, aktivering, första faktura och ångerrättens sista dag. Innan något är bokat visas tidigast och senast klart som preliminära punkter. Tidslinjen är en tunn ofylld linje, och markeringarna visar preliminärt (ring), bokat (grönt) eller risk (rött, till exempel grävning under tjälperioden).
+Panelen har en enda tidslinje där alla delleveranser ligger på samma linje, var och en med sitt datum utskrivet. Delleveranserna läggs till så snart kunden gjort valet: grävvecka, routerleverans, inkoppling, aktivering, första faktura och ångerrättens sista dag. Innan något är bokat visas tidigast och senast klart som preliminära punkter. Tidslinjen är en tunn ofylld linje, och markeringarna visar preliminärt (ring), bokat (grönt) eller risk (rött, till exempel grävning under tjälperioden).
 
 Varje bedömning visar: tidsintervall, tidigaste och senaste datum, säkerhetsnivå och en lista med aktiviteter som behöver vara klara (till exempel "Grävning är inte bokad", "Inkoppling med tekniker bokad").
 
@@ -83,7 +83,7 @@ Mobilt BankID (mockat) fyller i namn och personnummer. Kontaktuppgifter bekräft
 Allt på ett ställe med "Ändra" per del, totalkostnad första året, information om ångerrätt (14 dagar vid distansköp) och godkännande av villkor.
 
 ### Steg 9. Efter köpet
-Statusvy med milstolpar: Order mottagen, Grävning bokad, Grävning klar, Router skickad, Inkoppling, Aktiv. Proaktiva meddelanden vid förändringar (till exempel ny tid om grävningen försenas) med möjlighet att boka om själv.
+Samma tidslinje fortsätter att visa statusen efter köpet, ingen separat statusvy. Milstolpar: Order mottagen, Grävning bokad, Grävning klar, Router skickad, Inkoppling, Aktiv. Proaktiva meddelanden vid förändringar (till exempel ny tid om grävningen försenas) med möjlighet att boka om själv.
 
 ## 4. Assistentens roll och beteende
 
