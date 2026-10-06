@@ -159,11 +159,22 @@ button:disabled { cursor: default; }
 .empty { color: var(--muted); font-size: 13.5px; margin: 0; }
 .est-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
 .est-range { font: 700 30px/1 var(--font-display); }
-.timeline { position: relative; height: 34px; }
-.timeline .track { position: absolute; top: 9px; left: 0; right: 0; height: 6px; border-radius: 3px; background: var(--surface-2); border: 1px solid var(--line); }
-.timeline .band { position: absolute; top: 9px; height: 6px; border-radius: 3px; background: var(--accent); }
-.timeline .today { position: absolute; top: 4px; width: 2px; height: 16px; background: var(--ink); left: 0; }
-.timeline .lbl { position: absolute; top: 20px; font: 400 11px var(--font-mono); color: var(--muted); white-space: nowrap; }
+.tl { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.tl li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 10px; font-size: 13px; }
+.tl .lane { grid-column: 1 / -1; position: relative; height: 12px; }
+.tl .lane::before { content: ""; position: absolute; left: 0; right: 0; top: 5px; height: 2px; background: var(--line); }
+.tl .mk, .tl .span { position: absolute; top: 0; height: 12px; border: 2px solid var(--ink); background: var(--surface); }
+.tl .mk { width: 12px; border-radius: 50%; }
+.tl .span { border-radius: 6px; min-width: 12px; }
+.tl .good .mk { background: var(--good); border-color: var(--good); }
+.tl .good .span { border-color: var(--good); }
+.tl .bad .mk { background: var(--bad); border-color: var(--bad); }
+.tl .bad .span { border-color: var(--bad); }
+.tl .date { font: 400 12px var(--font-mono); font-variant-numeric: tabular-nums; color: var(--muted); text-align: right; }
+.tl-key { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--muted); margin: 0; }
+.tl-key span { display: inline-flex; align-items: center; gap: 6px; }
+.tl-key i { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--ink); background: var(--surface); }
+.tl-key i.g { background: var(--good); border-color: var(--good); }
 .kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; font-size: 13.5px; margin: 0; }
 .kv dt { color: var(--muted); }
 .kv dd { margin: 0; text-align: right; }
@@ -260,7 +271,7 @@ button:disabled { cursor: default; }
   const kr = n => n.toLocaleString('sv-SE') + ' kr';
   const fmt = (d, o = { weekday: 'short', day: 'numeric', month: 'short' }) => d.toLocaleDateString('sv-SE', o);
   const fmtLong = d => d.toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' });
-  const addBiz = (d, n) => { const x = new Date(d); while (n > 0) { x.setDate(x.getDate() + 1); if (x.getDay() % 6) n--; } return x; };
+  const addBiz = (d, n) => { const x = new Date(d), step = n < 0 ? -1 : 1; n = Math.abs(n); while (n > 0) { x.setDate(x.getDate() + step); if (x.getDay() % 6) n--; } return x; };
   const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
   const mondayOf = d => { const x = new Date(d); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; };
   const weekNo = d => { const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day); const y = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil(((t - y) / 864e5 + 1) / 7); };
@@ -677,6 +688,40 @@ button:disabled { cursor: default; }
   }
 
   /* ---------- Panel ---------- */
+  /* Milestones on the timeline: each sub-delivery with its date, added as the customer makes choices */
+  function milestones(e) {
+    const m = [{ name: 'Idag, bedömning gjord', from: TODAY, cls: '' }];
+    const s = state.slot, dw = state.digWeek;
+    if (state.confirmed && state.scenario !== 'C') m.push({ name: 'Ångerrätten löper ut', from: addDays(TODAY, 14), cls: '' });
+    if (dw) m.push({ name: `${state.digging === 'self' ? 'Ditt schakt klart' : 'Grävning och indragning'}, vecka ${weekNo(dw)}`, from: dw, to: addDays(dw, 4), cls: frostWeek(dw) ? 'bad' : 'good' });
+    if (s) {
+      if (state.scenario === 'A') {
+        m.push({ name: 'Router levereras', from: addBiz(s.date, -1), cls: 'good' }, { name: 'Bredband aktivt', from: s.date, cls: 'good' });
+      } else {
+        m.push({ name: 'Router levereras, cirka', from: addBiz(s.date, -5), cls: 'good' },
+          { name: `Inkoppling i huset, ${s.label.toLowerCase()}`, from: s.date, cls: 'good' }, { name: 'Fiber aktiv', from: s.date, cls: 'good' });
+      }
+      if (state.method) m.push({ name: 'Första fakturan skickas', from: new Date(s.date.getFullYear(), s.date.getMonth() + 1, 1, 12), cls: 'good' });
+    } else if (e) {
+      m.push({ name: 'Tidigast klart (preliminärt)', from: e.from, cls: '' }, { name: 'Senast klart (preliminärt)', from: e.to, cls: '' });
+    }
+    return m.sort((a, b) => a.from - b.from);
+  }
+  function timeline(e) {
+    const m = milestones(e);
+    const end = Math.max(...m.map(x => +(x.to || x.from))), span = Math.max(1, end - TODAY);
+    const pct = d => (d - TODAY) / span * 100;
+    const df = { weekday: 'short', day: 'numeric', month: 'short' };
+    return `<ol class="tl" aria-label="Tidslinje med delleveranser">${m.map(x => {
+      const left = pct(x.from), shape = x.to
+        ? `<span class="span" style="left:clamp(0px, ${left}%, calc(100% - 12px));width:max(12px, ${pct(x.to) - left}%)"></span>`
+        : `<span class="mk" style="left:clamp(0px, calc(${left}% - 6px), calc(100% - 12px))"></span>`;
+      const date = x.to ? `${fmt(x.from, { day: 'numeric', month: 'short' })}–${fmt(x.to, df)}` : fmt(x.from, df);
+      return `<li class="${x.cls}"><span class="lane">${shape}</span><span>${x.name}</span><span class="date">${date}</span></li>`;
+    }).join('')}</ol>
+    <p class="tl-key"><span><i></i>Preliminärt</span><span><i class="g"></i>Bokat</span></p>`;
+  }
+
   function render() {
     const e = estimate(), co = costs(), a = state.addr;
     $('#sumMini').textContent = e ? `${e.range} ${e.unit}${co.sp ? ' · ' + kr(co.monthlyTotal) + '/mån' : ''}` : '';
@@ -684,13 +729,8 @@ button:disabled { cursor: default; }
 
     let est = '<p class="empty">Ange adressen i chatten så får du en preliminär bedömning av när fibern kan vara klar.</p>';
     if (e) {
-      const span = e.to - TODAY, pos = d => Math.max(0, Math.min(100, (d - TODAY) / span * 100));
-      const booked = state.slot ? `<div class="today" style="left:${pos(state.slot.date)}%;background:var(--accent)" title="Bokad"></div>` : '';
       est = `<div class="est-head"><span class="est-range">${e.range} <small style="font-size:15px;font-weight:500">${e.unit}</small></span><span class="pill">${e.conf}</span></div>
-        <div class="timeline" aria-label="Tidslinje från idag till senaste datum">
-          <div class="track"></div><div class="band" style="left:${pos(e.from)}%;right:0"></div><div class="today"></div>${booked}
-          <span class="lbl" style="left:0">Idag</span><span class="lbl" style="right:0">${fmt(e.to, { day: 'numeric', month: 'short' })}</span>
-        </div>
+        ${timeline(e)}
         <ul class="factors">${e.factors.map(([t, l]) => `<li class="${l}">${t}</li>`).join('')}</ul>
         <ul class="factors legend"><li class="good">Klart, godkänt</li><li class="bad">Inte klart eller inte godkänt</li></ul>`;
     }

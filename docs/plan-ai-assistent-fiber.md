@@ -39,6 +39,8 @@ Kunden anger adress. Assistenten slår upp nätstatus och ger direkt:
 - **Scenario B, fiber finns i tomtgräns men inte indragen:** 4–8 veckor, medelsäkerhet. Kräver grävning på tomten, håltagning och inkoppling.
 - **Scenario C, inget fibernät i området:** 6–12 månader, låg säkerhet. Kräver utbyggnad som beror på hur många grannar som anmäler intresse. Kunden erbjuds intresseanmälan och ett tillfälligt mobilt bredband.
 
+Panelen har en tidslinje där varje delleverans läggs ut med sitt datum utskrivet så snart kunden gjort valet: grävvecka, routerleverans, inkoppling, aktivering, första faktura och ångerrättens sista dag. Innan något är bokat visas tidigast och senast klart som preliminära punkter. Tidslinjen är en tunn ofylld linje, och markeringarna visar preliminärt (ring), bokat (grönt) eller risk (rött, till exempel grävning under tjälperioden).
+
 Varje bedömning visar: tidsintervall, tidigaste och senaste datum, säkerhetsnivå och en lista med aktiviteter som behöver vara klara (till exempel "Grävning är inte bokad", "Inkoppling med tekniker bokad").
 
 ### Steg 2. Förutsättningar på tomten (endast scenario B)
