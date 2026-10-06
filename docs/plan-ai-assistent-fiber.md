@@ -51,7 +51,7 @@ Innan produkterna visas gör assistenten en kort behovsanalys med tre frågor, e
 2. Vad används internet till? Flerval: surf och mejl, streaming, hemarbete och videomöten, onlinespel, stora filer och uppladdning.
 3. Hur viktigt är priset? Lägsta pris, en bra balans eller bästa prestanda.
 
-Svaren ger ett uppskattat behov i Mbit/s när flest är uppkopplade samtidigt. Assistenten rekommenderar den minsta hastighet som räcker. Om priset är viktigast och behovet ligger nära en lägre nivå föreslås den lägre nivån, med besparingen per månad och en tydlig upplysning om nackdelen. Om prestanda är viktigast föreslås ett steg upp. Varje produktkort visar om den räcker för behovet. Kunden kan hoppa över analysen, och väljer kunden en lägre hastighet än behovet säger assistenten det vänligt utan att stoppa köpet. Tillval (tv, telefoni) kan läggas till.
+Svaren ger ett uppskattat behov i Mbit/s när flest är uppkopplade samtidigt. Assistenten rekommenderar den minsta hastighet som räcker. Om priset är viktigast och behovet ligger nära en lägre nivå föreslås den lägre nivån, med besparingen per månad och en tydlig upplysning om nackdelen. Om prestanda är viktigast föreslås ett steg upp. Den rekommenderade produkten markeras tydligt och övriga alternativ visas utgråade, men går fortfarande att välja. Kunden kan hoppa över analysen, och väljer kunden en lägre hastighet än behovet säger assistenten det vänligt utan att stoppa köpet. Tillval (tv, telefoni) kan läggas till.
 
 I prototypen är behovsberäkningen en enkel tumregel. I en riktig lösning bör den kalibreras mot faktisk användningsdata.
 

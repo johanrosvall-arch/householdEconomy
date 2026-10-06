@@ -120,9 +120,8 @@ button:disabled { cursor: default; }
 .alert::before { content: "✕"; flex: none; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; font: 700 11px/1 var(--font-body); background: var(--bad); color: var(--on-status); margin-top: 1px; }
 .alert strong { color: var(--bad); }
 .chip[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
-.opt .why { font-size: 12.5px; font-weight: 600; }
-.opt .why.good { color: var(--good); } .opt .why.bad { color: var(--bad); }
-.opt .why.good::before { content: "✓ "; } .opt .why.bad::before { content: "✕ "; }
+.opt.dim { opacity: .5; filter: grayscale(1); }
+.opt.dim:hover:not(:disabled), .opt.dim:focus-visible { opacity: .8; }
 .check { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 13.5px; }
 .check li::before { content: "☐ "; color: var(--accent); }
 
@@ -442,8 +441,8 @@ button:disabled { cursor: default; }
       : ['Här är våra hastigheter. Säg till om du vill att jag hjälper dig välja.'];
     const c = await bot(intro,
       `<h4>Välj bredband</h4>
-       <div class="opts">${SPEEDS.map(sp => `<button class="opt" data-v="${sp.id}">${r && sp.id === r.sp.id ? '<span class="badge">Rekommenderas för er</span>' : ''}<strong>${sp.name}</strong><small>${sp.small}</small>${r ? `<span class="why ${sp.mbit >= r.need ? 'good' : 'bad'}">${sp.mbit >= r.need ? 'Räcker för ert behov' : 'Under ert uppskattade behov'}</span>` : ''}<span class="price">${kr(sp.price)}/mån</span></button>`).join('')}</div>
-       <p class="hint">Router ingår. Ingen bindningstid i demon. Du kan byta hastighet när som helst. Månadsavgiften börjar först när fibern är aktiv.</p>`);
+       <div class="opts">${SPEEDS.map(sp => `<button class="opt${r && sp.id !== r.sp.id ? ' dim' : ''}" data-v="${sp.id}">${r && sp.id === r.sp.id ? '<span class="badge">Rekommenderas för er</span>' : ''}<strong>${sp.name}</strong><small>${sp.small}</small><span class="price">${kr(sp.price)}/mån</span></button>`).join('')}</div>
+       <p class="hint">Router ingår. Ingen bindningstid i demon. ${r ? 'Du kan fortfarande välja ett annat alternativ. ' : ''}Du kan byta hastighet när som helst. Månadsavgiften börjar först när fibern är aktiv.</p>`);
     onPick(c, '.opt', async (v, b) => {
       state.speed = v; user($('strong', b).textContent); render();
       const sp = SPEEDS.find(x => x.id === v);
