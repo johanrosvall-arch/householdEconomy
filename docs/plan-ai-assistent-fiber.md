@@ -45,11 +45,12 @@ Varje bedömning visar: tidsintervall, tidigaste och senaste datum, säkerhetsni
 Vem gräver på tomten? "Vi sköter allt" eller "Jag gräver själv" (lägre pris, men kunden ansvarar för att schaktet är klart till ett visst datum). Valet uppdaterar både pris och tidsbedömning direkt, vilket är ett tydligt demoögonblick.
 
 ### Steg 3. Behovsanalys och val av tjänst
-Innan produkterna visas gör assistenten en kort behovsanalys med tre frågor, en i taget:
+Innan produkterna visas gör assistenten en kort behovsanalys med fyra frågor, en i taget:
 
-1. Hur många i hushållet använder internet? (1, 2–3, 4–5, 6 eller fler)
-2. Vad används internet till? Flerval: surf och mejl, streaming, hemarbete och videomöten, onlinespel, stora filer och uppladdning.
-3. Hur viktigt är priset? Lägsta pris, en bra balans eller bästa prestanda.
+1. Vill du identifiera dig med BankID? Då kan assistenten se om kunden redan är kund och visa personliga erbjudanden (till exempel rabatt för befintliga mobilkunder). Frågan ställs alltid, även om kunden sedan hoppar över resten av analysen. Kunden kan fortsätta utan att identifiera sig och ser då ordinarie priser. Den som identifierat sig här behöver inte göra det igen vid beställningen.
+2. Hur många i hushållet använder internet? (1, 2–3, 4–5, 6 eller fler)
+3. Vad används internet till? Flerval: surf och mejl, streaming, hemarbete och videomöten, onlinespel, stora filer och uppladdning.
+4. Hur viktigt är priset? Lägsta pris, en bra balans eller bästa prestanda.
 
 Svaren ger ett uppskattat behov i Mbit/s när flest är uppkopplade samtidigt. Assistenten rekommenderar den minsta hastighet som räcker. Om priset är viktigast och behovet ligger nära en lägre nivå föreslås den lägre nivån, med besparingen per månad och en tydlig upplysning om nackdelen. Om prestanda är viktigast föreslås ett steg upp. Den rekommenderade produkten markeras tydligt och övriga alternativ visas utgråade, men går fortfarande att välja. Kunden kan hoppa över analysen, och väljer kunden en lägre hastighet än behovet säger assistenten det vänligt utan att stoppa köpet. Tillval (tv, telefoni) kan läggas till.
 

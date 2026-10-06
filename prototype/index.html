@@ -92,6 +92,7 @@ button:disabled { cursor: default; }
 .opt strong { font-weight: 600; }
 .opt small { color: var(--muted); font-size: 12.5px; }
 .opt .price { font: 500 14px var(--font-mono); font-variant-numeric: tabular-nums; }
+.opt .price s { color: var(--muted); }
 .badge { justify-self: start; font: 500 10.5px var(--font-mono); letter-spacing: .05em; text-transform: uppercase; padding: 1px 7px; border-radius: 99px; background: var(--accent); color: var(--accent-ink); }
 .primary { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 10px; padding: 9px 16px; font-weight: 600; justify-self: start; }
 .primary:disabled { opacity: .45; }
@@ -251,7 +252,7 @@ button:disabled { cursor: default; }
   const STEPS = ['Adress', 'Tjänst', 'Uppgifter', 'Installation', 'Betalning', 'Bekräfta'];
 
   let state;
-  const fresh = () => ({ step: 0, scenario: null, addr: null, digging: null, speed: null, customer: null, needs: null,
+  const fresh = () => ({ step: 0, scenario: null, addr: null, digging: null, speed: null, customer: null, needs: null, offer: null,
     delivery: null, billing: null, digWeek: null, slot: null, oneoff: null, method: null, confirmed: false, orderNo: null, edit: false });
 
   const $ = (s, r = document) => r.querySelector(s);
@@ -302,12 +303,16 @@ button:disabled { cursor: default; }
   const bizBetween = (a, b) => { let n = 0; const x = new Date(a); while (x < b) { x.setDate(x.getDate() + 1); if (x.getDay() % 6) n++; } return n; };
 
   /* ---------- Costs ---------- */
+  /* Personal offer for identified customers (demo: existing mobile customer) */
+  const OFFER = { discount: 100, months: 12, reason: 'Du har redan mobilabonnemang hos oss' };
+  const price = sp => sp.price - (state.offer ? state.offer.discount : 0);
+  const priceTag = sp => state.offer ? `<s>${kr(sp.price)}</s> ${kr(price(sp))}/mån` : `${kr(sp.price)}/mån`;
   function costs() {
     const sp = SPEEDS.find(s => s.id === state.speed);
-    const monthly = (sp ? sp.price : 0) + (state.method ? PAY[state.method].fee : 0);
+    const monthly = (sp ? price(sp) : 0) + (state.method ? PAY[state.method].fee : 0);
     const connect = state.scenario === 'B' && state.digging ? CONNECT[state.digging] : 0;
     const split = state.oneoff === 'split' && connect ? Math.round(connect / 24) : 0;
-    return { sp, monthly, connect, split, monthlyTotal: monthly + split, firstYear: monthly * 12 + connect };
+    return { sp, monthly, connect, split, monthlyTotal: monthly + split, firstYear: monthly * 12 + connect, discount: state.offer && sp ? state.offer.discount : 0 };
   }
 
   /* ---------- Chat primitives ---------- */
@@ -397,7 +402,9 @@ button:disabled { cursor: default; }
   async function askNeeds() {
     state.step = 1; render();
     if (state.needs !== null) return askSpeed();
-    const c1 = await bot(['Innan vi väljer hastighet vill jag förstå hur ni använder internet, så att du varken betalar för mycket eller får för lite. Tre snabba frågor.', 'Hur många i hushållet använder internet?'],
+    await bot(['Innan vi väljer hastighet vill jag förstå era behov, så att du varken betalar för mycket eller får för lite. Några snabba frågor.']);
+    await askOffer();
+    const c1 = await bot(['Hur många i hushållet använder internet?'],
       `<div class="choices">${USERS.map(([k, t]) => `<button class="chip" data-v="${k}">${t}</button>`).join('')}</div>
        <button class="ghost" data-v="skip">Hoppa över, jag vet vad jag vill ha</button>`);
     const users = await pick(c1, 'button');
@@ -423,6 +430,26 @@ button:disabled { cursor: default; }
     askSpeed();
   }
 
+  async function askOffer() {
+    if (state.customer) {
+      await bot([`Du är identifierad som ${esc(state.customer.name)}, så priserna jag visar är anpassade för dig.`]);
+      return;
+    }
+    const c = await bot(['Vill du identifiera dig? Då kan jag se om du redan är kund hos oss och visa dina personliga erbjudanden.'],
+      `<h4>Se dina personliga erbjudanden</h4>
+       <div class="row"><button class="primary" data-v="bankid">Identifiera med Mobilt BankID</button><button class="ghost" data-v="no">Fortsätt utan att identifiera mig</button></div>
+       <p class="hint">Vi använder bara uppgifterna för att visa erbjudanden och för din beställning. Du behöver identifiera dig senare ändå för att beställa. Simulerat i prototypen.</p>`);
+    const v = await pick(c, 'button');
+    if (v === 'no') { await bot(['Inga problem, du kan identifiera dig senare. Då ser du ordinarie priser så länge.']); return; }
+    await bot(['Väntar på BankID …']);
+    state.customer = { name: 'Alex Lindqvist (demo)', pnr: '19850312-XXXX', email: 'alex@example.se', phone: '070-000 00 00' };
+    state.offer = OFFER; render();
+    await bot([`Tack, ${esc(state.customer.name.split(' ')[0])}! Jag hittade ett personligt erbjudande till dig:`],
+      `<div class="verdict"><span class="pill">Personligt erbjudande</span>
+         <div class="big">${kr(OFFER.discount)} rabatt per månad</div>
+         <div>${OFFER.reason}, så du får ${kr(OFFER.discount)} lägre månadsavgift på bredbandet i ${OFFER.months} månader. Rabatten är redan inräknad i priserna jag visar.</div></div>`);
+  }
+
   function recommend(n) {
     const need = USERS.find(x => x[0] === n.users)[2] + n.uses.reduce((t, k) => t + USES.find(x => x[0] === k)[2], 0);
     let i = SPEEDS.findIndex(sp => sp.mbit >= need); if (i < 0) i = SPEEDS.length - 1;
@@ -437,11 +464,11 @@ button:disabled { cursor: default; }
     const n = state.needs, r = n ? recommend(n) : null;
     const intro = r
       ? [`Utifrån era svar (${lbl(USERS, n.users).toLowerCase()}, ${n.uses.map(k => lbl(USES, k).toLowerCase()).join(', ')}) uppskattar jag att ni behöver cirka <strong>${r.need} Mbit/s</strong> när flest är uppkopplade samtidigt.`,
-         `Jag rekommenderar <strong>${r.sp.name}</strong> för ${kr(r.sp.price)} per månad.${r.note ? ' ' + r.note : ''}`]
+         `Jag rekommenderar <strong>${r.sp.name}</strong> för ${kr(price(r.sp))} per månad${state.offer ? ' med ditt erbjudande' : ''}.${r.note ? ' ' + r.note : ''}`]
       : ['Här är våra hastigheter. Säg till om du vill att jag hjälper dig välja.'];
     const c = await bot(intro,
       `<h4>Välj bredband</h4>
-       <div class="opts">${SPEEDS.map(sp => `<button class="opt${r && sp.id !== r.sp.id ? ' dim' : ''}" data-v="${sp.id}">${r && sp.id === r.sp.id ? '<span class="badge">Rekommenderas för er</span>' : ''}<strong>${sp.name}</strong><small>${sp.small}</small><span class="price">${kr(sp.price)}/mån</span></button>`).join('')}</div>
+       <div class="opts">${SPEEDS.map(sp => `<button class="opt${r && sp.id !== r.sp.id ? ' dim' : ''}" data-v="${sp.id}">${r && sp.id === r.sp.id ? '<span class="badge">Rekommenderas för er</span>' : ''}<strong>${sp.name}</strong><small>${sp.small}</small><span class="price">${priceTag(sp)}</span></button>`).join('')}</div>
        <p class="hint">Router ingår. Ingen bindningstid i demon. ${r ? 'Du kan fortfarande välja ett annat alternativ. ' : ''}Du kan byta hastighet när som helst. Månadsavgiften börjar först när fibern är aktiv.</p>`);
     onPick(c, '.opt', async (v, b) => {
       state.speed = v; user($('strong', b).textContent); render();
@@ -453,6 +480,7 @@ button:disabled { cursor: default; }
 
   async function askIdentity() {
     state.step = 2; render();
+    if (state.customer) return confirmContact('Du är redan identifierad med BankID. Stämmer dina kontaktuppgifter?');
     const c = await bot(['För att kunna lägga beställningen behöver jag veta vem du är. Vi gör också en kreditupplysning, den syns bara för dig som en förfrågan.'],
       `<h4>Identifiera dig</h4>
        <button class="primary" data-v="bankid">Identifiera med Mobilt BankID</button>
@@ -461,7 +489,12 @@ button:disabled { cursor: default; }
       await bot(['Väntar på BankID …']);
       state.customer = { name: 'Alex Lindqvist (demo)', pnr: '19850312-XXXX', email: 'alex@example.se', phone: '070-000 00 00' };
       render();
-      const c2 = await bot(['Tack! Stämmer dina kontaktuppgifter?'],
+      confirmContact('Tack! Stämmer dina kontaktuppgifter?');
+    });
+  }
+
+  async function confirmContact(text) {
+      const c2 = await bot([text],
         `<div class="field"><label for="email">E-post</label><input id="email" value="${state.customer.email}"></div>
          <div class="field"><label for="phone">Mobil (för sms om leverans och tekniker)</label><input id="phone" value="${state.customer.phone}"></div>
          <button class="primary" data-v="ok">Ja, gå vidare</button>`);
@@ -469,7 +502,6 @@ button:disabled { cursor: default; }
         state.customer.email = $('#email', c2).value; state.customer.phone = $('#phone', c2).value;
         lock(c2, $('button', c2)); user('Ja, det stämmer'); render(); next(askDelivery)();
       });
-    });
   }
 
   async function askDelivery() {
@@ -564,7 +596,7 @@ button:disabled { cursor: default; }
       const cc = costs();
       const d = state.slot.date;
       const daysInMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
-      const part = Math.round(cc.sp.price * (daysInMonth - d.getDate() + 1) / daysInMonth);
+      const part = Math.round(price(cc.sp) * (daysInMonth - d.getDate() + 1) / daysInMonth);
       await bot(['Så här kommer din första faktura att se ut, så att den inte blir en överraskning:'],
         `<dl class="kv">
           <dt>${cc.sp.name}, ${fmt(d, { day: 'numeric', month: 'short' })} till månadsskiftet</dt><dd class="money">${kr(part)}</dd>
@@ -583,7 +615,8 @@ button:disabled { cursor: default; }
       ['Adress', `${esc(a.street)}${a.city ? ', ' + a.city : ''}`, null],
       ...(state.scenario === 'B' ? [['Grävning', state.digging === 'we' ? 'Ni sköter allt' : 'Jag gräver själv', 'dig']] : []),
       ...(state.needs ? [['Behov', `${lbl(USERS, state.needs.users)}, cirka ${recommend(state.needs).need} Mbit/s, ${lbl(PRICE, state.needs.price).toLowerCase()}`, 'needs']] : []),
-      ['Tjänst', `${co.sp.name}, ${kr(co.sp.price)}/mån`, 'speed'],
+      ['Tjänst', `${co.sp.name}, ${kr(price(co.sp))}/mån`, 'speed'],
+      ...(state.offer ? [['Personligt erbjudande', `${kr(state.offer.discount)} rabatt per månad i ${state.offer.months} månader (${state.offer.reason.toLowerCase()})`, null]] : []),
       ['Kontakt', `${esc(state.customer.name)}, ${esc(state.customer.email)}`, 'id'],
       ['Router levereras till', esc(state.delivery), 'deliv'],
       [state.scenario === 'A' ? 'Startdatum' : 'Grävning och inkoppling', state.scenario === 'A' ? fmtLong(state.slot.date) : `Grävning v. ${weekNo(state.digWeek)}, inkoppling ${fmtLong(state.slot.date)} ${state.slot.label.toLowerCase()}`, 'book'],
@@ -667,6 +700,7 @@ button:disabled { cursor: default; }
     if (state.scenario === 'B' && state.digging) kv.push(['Grävning', state.digging === 'we' ? 'Vi gräver' : 'Du gräver']);
     if (state.needs) kv.push(['Behov', `${lbl(USERS, state.needs.users)}, ~${recommend(state.needs).need} Mbit/s`]);
     if (co.sp) kv.push(['Tjänst', co.sp.name]);
+    if (state.offer) kv.push(['Erbjudande', `−${kr(state.offer.discount)}/mån i ${state.offer.months} mån`]);
     if (state.customer) kv.push(['Kund', esc(state.customer.name)]);
     if (state.delivery) kv.push(['Router till', esc(state.delivery.split(' (')[0])]);
     if (state.digWeek) kv.push(['Grävvecka', `Vecka ${weekNo(state.digWeek)}`]);
