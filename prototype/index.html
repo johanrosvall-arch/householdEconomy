@@ -10,23 +10,22 @@
 <style>
 /* Layout: split view. Chat leads one question at a time (left); live order panel keeps the whole picture (right). Stacks on phones. */
 :root {
-  --bg: #eef2f3;
+  --bg: #eff1f5;
   --surface: #ffffff;
-  --surface-2: #f5f8f8;
-  --ink: #142128;
-  --muted: #5b6b72;
-  --line: #d6e0e2;
-  --accent: #0a7470;
+  --surface-2: #f5f7fa;
+  --ink: #151b2b;
+  --muted: #5a6275;
+  --line: #d8dde7;
+  --accent: #2347a6;
   --accent-ink: #ffffff;
-  --accent-soft: #dcefed;
-  --good: #2b7a4b;
-  --good-soft: #e1f2e7;
-  --warn: #9a6200;
-  --warn-soft: #fbefd6;
-  --bad: #b23a2e;
-  --bad-soft: #f8e1de;
-  --bubble-user: #142128;
-  --bubble-user-ink: #f1f5f6;
+  --accent-soft: #e4e9f8;
+  --good: #23824a;
+  --good-soft: #e1f3e8;
+  --bad: #c0352a;
+  --bad-soft: #fbe4e1;
+  --on-status: #ffffff;
+  --bubble-user: #151b2b;
+  --bubble-user-ink: #f1f3f8;
   --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
   --font-body: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
@@ -34,19 +33,20 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0d1518; --surface: #152126; --surface-2: #1b2a30; --ink: #e4eced; --muted: #93a6ac;
-    --line: #2a3b41; --accent: #3cbfb6; --accent-ink: #062523; --accent-soft: #163a38;
-    --good: #5cc98a; --good-soft: #17352a; --warn: #e3b04b; --warn-soft: #3a2e14; --bad: #ef7d70; --bad-soft: #3d1f1b;
-    --bubble-user: #2c4148; --bubble-user-ink: #eef4f5; color-scheme: dark;
+    --bg: #0f131c; --surface: #171c28; --surface-2: #1d2433; --ink: #e6e9f0; --muted: #98a1b5;
+    --line: #2c3446; --accent: #8ea6ff; --accent-ink: #0b1433; --accent-soft: #1e2a4f;
+    --good: #5ccb88; --good-soft: #163527; --bad: #f07a6e; --bad-soft: #3f1f1c; --on-status: #0f131c;
+    --bubble-user: #2e3850; --bubble-user-ink: #eef1f7; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #0d1518; --surface: #152126; --surface-2: #1b2a30; --ink: #e4eced; --muted: #93a6ac;
-  --line: #2a3b41; --accent: #3cbfb6; --accent-ink: #062523; --accent-soft: #163a38;
-  --good: #5cc98a; --good-soft: #17352a; --warn: #e3b04b; --warn-soft: #3a2e14; --bad: #ef7d70; --bad-soft: #3d1f1b;
-  --bubble-user: #2c4148; --bubble-user-ink: #eef4f5; color-scheme: dark;
+  --bg: #0f131c; --surface: #171c28; --surface-2: #1d2433; --ink: #e6e9f0; --muted: #98a1b5;
+    --line: #2c3446; --accent: #8ea6ff; --accent-ink: #0b1433; --accent-soft: #1e2a4f;
+    --good: #5ccb88; --good-soft: #163527; --bad: #f07a6e; --bad-soft: #3f1f1c; --on-status: #0f131c;
+    --bubble-user: #2e3850; --bubble-user-ink: #eef1f7; color-scheme: dark;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { height: 100%; }
 body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 var(--font-body); }
 button, input, select { font: inherit; color: inherit; }
@@ -57,7 +57,7 @@ button { cursor: pointer; }
 .topbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding-block: 14px; }
 .brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 700; font-size: 18px; }
 .brand-mark { width: 26px; height: 26px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, var(--accent) 0 30%, transparent 31%), conic-gradient(var(--accent) 0 25%, var(--accent-soft) 0 50%, var(--accent) 0 75%, var(--accent-soft) 0); }
-.demo-tag { font: 500 11px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--warn); background: var(--warn-soft); padding: 2px 8px; border-radius: 99px; }
+.demo-tag { font: 500 11px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); padding: 2px 8px; border-radius: 99px; }
 .demo-controls { margin-left: auto; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); }
 .demo-controls button { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 4px 10px; font-size: 13px; }
 .demo-controls button:hover { border-color: var(--accent); }
@@ -105,17 +105,24 @@ button:disabled { cursor: default; }
 .addr-list small { color: var(--muted); }
 
 .verdict { border-radius: 10px; padding: 12px; display: grid; gap: 6px; }
-.verdict.high { background: var(--good-soft); } .verdict.medium { background: var(--warn-soft); } .verdict.low { background: var(--bad-soft); }
+.verdict { background: var(--surface-2); border: 1px solid var(--line); }
 .verdict .big { font: 700 26px/1.1 var(--font-display); }
 .pill { display: inline-flex; align-items: center; gap: 6px; font: 500 11.5px var(--font-mono); letter-spacing: .04em; text-transform: uppercase; border-radius: 99px; padding: 2px 9px; }
 .pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-.pill.high { color: var(--good); background: var(--good-soft); }
-.pill.medium { color: var(--warn); background: var(--warn-soft); }
-.pill.low { color: var(--bad); background: var(--bad-soft); }
+.pill { color: var(--ink); background: var(--surface); border: 1px solid var(--line); }
 .factors { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 13.5px; }
 .factors li { display: flex; gap: 8px; align-items: baseline; }
-.factors li::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 2px; background: var(--muted); transform: translateY(1px); }
-.factors li.good::before { background: var(--good); } .factors li.warn::before { background: var(--warn); } .factors li.bad::before { background: var(--bad); }
+.factors li::before { flex: none; width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center; font: 700 10px/1 var(--font-body); color: var(--on-status); transform: translateY(2px); }
+.factors li.good::before { content: "✓"; background: var(--good); }
+.factors li.bad::before { content: "✕"; background: var(--bad); }
+.factors.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--muted); }
+.alert { background: var(--bad-soft); border: 1px solid var(--bad); border-radius: 10px; padding: 10px 12px; font-size: 13.5px; display: flex; gap: 10px; align-items: flex-start; }
+.alert::before { content: "✕"; flex: none; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; font: 700 11px/1 var(--font-body); background: var(--bad); color: var(--on-status); margin-top: 1px; }
+.alert strong { color: var(--bad); }
+.chip[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.opt .why { font-size: 12.5px; font-weight: 600; }
+.opt .why.good { color: var(--good); } .opt .why.bad { color: var(--bad); }
+.opt .why.good::before { content: "✓ "; } .opt .why.bad::before { content: "✕ "; }
 .check { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 13.5px; }
 .check li::before { content: "☐ "; color: var(--accent); }
 
@@ -144,9 +151,9 @@ button:disabled { cursor: default; }
 .stepper { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
 .stepper li { display: grid; gap: 4px; font-size: 11px; color: var(--muted); text-align: center; }
 .stepper li::before { content: ""; height: 4px; border-radius: 2px; background: var(--line); }
-.stepper li.done::before { background: var(--accent); }
+.stepper li.done::before { background: var(--good); }
 .stepper li.current { color: var(--ink); font-weight: 600; }
-.stepper li.current::before { background: linear-gradient(90deg, var(--accent) 50%, var(--line) 50%); }
+.stepper li.current::before { background: linear-gradient(90deg, var(--good) 50%, var(--line) 50%); }
 .psec { display: grid; gap: 8px; }
 .psec h3 { margin: 0; font: 500 11px var(--font-mono); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
 .empty { color: var(--muted); font-size: 13.5px; margin: 0; }
@@ -170,8 +177,8 @@ button:disabled { cursor: default; }
 .status li::before { content: ""; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--line); background: var(--surface); margin-top: 4px; z-index: 1; }
 .status li::after { content: ""; position: absolute; left: 7px; top: 16px; bottom: 0; width: 2px; background: var(--line); }
 .status li:last-child::after { display: none; }
-.status li.done::before { background: var(--accent); border-color: var(--accent); }
-.status li.now::before { border-color: var(--accent); }
+.status li.done::before { background: var(--good); border-color: var(--good); }
+.status li.now::before { border-color: var(--ink); }
 .status small { color: var(--muted); display: block; }
 .note { font-size: 12px; color: var(--muted); margin: 0; }
 
@@ -227,10 +234,14 @@ button:disabled { cursor: default; }
     C: { street: 'Sjöviksvägen 31', city: '599 94 Ödeshög', net: 'Inget fibernät i området ännu' }
   };
   const SPEEDS = [
-    { id: '250', name: 'Fiber 250/250', price: 399, small: 'Surf, mejl och tv för 1–2 personer' },
-    { id: '500', name: 'Fiber 500/500', price: 449, small: 'Hemarbete, streaming i flera rum', rec: true },
-    { id: '1000', name: 'Fiber 1000/1000', price: 549, small: 'Många enheter, stora filer, spel' }
+    { id: '250', name: 'Fiber 250/250', mbit: 250, price: 399, small: 'Surf, mejl och tv för 1–2 personer' },
+    { id: '500', name: 'Fiber 500/500', mbit: 500, price: 449, small: 'Hemarbete, streaming i flera rum' },
+    { id: '1000', name: 'Fiber 1000/1000', mbit: 1000, price: 549, small: 'Många enheter, stora filer, spel' }
   ];
+  /* Needs analysis: rough simultaneous peak demand in Mbit/s (demo heuristics) */
+  const USERS = [['1', '1 person', 100], ['2-3', '2–3 personer', 200], ['4-5', '4–5 personer', 350], ['6+', '6 eller fler', 500]];
+  const USES = [['surf', 'Surf, mejl och sociala medier', 0], ['tv', 'Streaming av film och tv', 100], ['work', 'Hemarbete och videomöten', 100], ['game', 'Onlinespel', 150], ['files', 'Stora filer och uppladdning', 300]];
+  const PRICE = [['low', 'Lägsta pris är viktigast'], ['mid', 'En bra balans'], ['high', 'Bästa prestanda']];
   const CONNECT = { we: 21900, self: 14900 };
   const PAY = {
     efaktura: { name: 'E-faktura i internetbanken', fee: 0 },
@@ -241,7 +252,7 @@ button:disabled { cursor: default; }
   const STEPS = ['Adress', 'Tjänst', 'Uppgifter', 'Installation', 'Betalning', 'Bekräfta'];
 
   let state;
-  const fresh = () => ({ step: 0, scenario: null, addr: null, digging: null, speed: null, customer: null,
+  const fresh = () => ({ step: 0, scenario: null, addr: null, digging: null, speed: null, customer: null, needs: null,
     delivery: null, billing: null, digWeek: null, slot: null, oneoff: null, method: null, confirmed: false, orderNo: null, edit: false });
 
   const $ = (s, r = document) => r.querySelector(s);
@@ -254,6 +265,7 @@ button:disabled { cursor: default; }
   const mondayOf = d => { const x = new Date(d); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; };
   const weekNo = d => { const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day); const y = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil(((t - y) / 864e5 + 1) / 7); };
   const isFrost = d => [11, 0, 1, 2].includes(d.getMonth());
+  const frostWeek = w => isFrost(w) || isFrost(addDays(w, 4));
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
   /* ---------- Preliminary estimate (rule based, mocked) ---------- */
@@ -261,30 +273,32 @@ button:disabled { cursor: default; }
     const e = baseEstimate();
     if (!e || !state.slot || state.scenario === 'C') return e;
     const d = state.slot.date;
-    return { ...e, level: 'high', conf: 'Bokad tid', range: fmt(d, { day: 'numeric', month: 'short' }), unit: '', from: d, to: d,
-      factors: [['Installation och leverans är bokade', 'good'], ...e.factors.filter(f => f[1] !== 'bad')] };
+    return { ...e, conf: 'Bokad tid', range: fmt(d, { day: 'numeric', month: 'short' }), unit: '', from: d, to: d };
   }
+  /* Each factor is an activity: 'good' = klart/godkänt (grönt), 'bad' = inte klart/godkänt (rött) */
   function baseEstimate() {
     const s = state.scenario;
     if (!s) return null;
     if (s === 'A') {
-      return { level: 'high', conf: 'Hög säkerhet', range: '5–10', unit: 'arbetsdagar', from: addBiz(TODAY, 5), to: addBiz(TODAY, 10),
-        factors: [['Fiberuttaget i huset är aktivt', 'good'], ['Ingen tekniker behövs, du kopplar in routern själv', 'good'], ['Leveranstid router 2–4 arbetsdagar', '']] };
+      return { conf: 'Hög säkerhet', range: '5–10', unit: 'arbetsdagar', from: addBiz(TODAY, 5), to: addBiz(TODAY, 10),
+        factors: [['Fiberuttaget i huset är aktivt', 'good'], ['Ingen tekniker behövs, du kopplar in routern själv', 'good'],
+          state.slot ? ['Startdatum bokat, routern skickas', 'good'] : ['Startdatum är inte valt', 'bad']] };
     }
     if (s === 'B') {
       const self = state.digging === 'self';
       let min = self ? 15 : 20, max = self ? 45 : 40;
       const f = [['Fiber finns i tomtgräns, cirka 25 m till huset', 'good'],
-        state.digging ? [self ? 'Du gräver själv, tiden beror på när schaktet är klart' : 'Vi gräver, entreprenör har kapacitet i området', self ? 'warn' : 'good']
-                      : ['Grävning på tomten behövs, vem som gräver är inte bestämt', 'warn'],
-        ['Inkoppling kräver hembesök av tekniker', '']];
-      if (isFrost(addBiz(TODAY, max))) { max += 10; f.push(['Tjäle kan försena grävning december till mars', 'bad']); }
-      else f.push(['Grävning före tjälen är möjlig om du bokar i höst', 'good']);
-      if (state.digWeek) { min = Math.max(min, bizBetween(TODAY, state.digWeek) + 5); }
-      return { level: 'medium', conf: 'Medelsäkerhet', range: `${Math.round(min / 5)}–${Math.round(max / 5)}`, unit: 'veckor', from: addBiz(TODAY, min), to: addBiz(TODAY, max), factors: f };
+        state.digging ? [self ? 'Du gräver själv enligt vår instruktion' : 'Vi gräver, entreprenör har kapacitet i området', 'good'] : ['Vem som gräver på tomten är inte bestämt', 'bad']];
+      if (state.digWeek) {
+        const fr = frostWeek(state.digWeek);
+        min = Math.max(min, bizBetween(TODAY, state.digWeek) + 5); max = Math.max(max, min + (fr ? 20 : 10));
+        f.push(fr ? [`Grävning vecka ${weekNo(state.digWeek)} ligger i tjälperioden och kan försenas`, 'bad'] : [`Grävning bokad vecka ${weekNo(state.digWeek)}`, 'good']);
+      } else f.push(['Grävning är inte bokad', 'bad']);
+      f.push(state.slot ? ['Inkoppling med tekniker bokad', 'good'] : ['Inkoppling med tekniker är inte bokad', 'bad']);
+      return { conf: 'Medelsäkerhet', range: `${Math.round(min / 5)}–${Math.round(max / 5)}`, unit: 'veckor', from: addBiz(TODAY, min), to: addBiz(TODAY, max), factors: f };
     }
-    return { level: 'low', conf: 'Låg säkerhet', range: '6–12', unit: 'månader', from: addDays(TODAY, 182), to: addDays(TODAY, 365),
-      factors: [['Inget fibernät i området', 'bad'], ['Utbyggnad startar när cirka 60 % av hushållen anmält intresse (just nu 38 %)', 'warn'], ['Grävtillstånd från kommunen krävs', 'warn']] };
+    return { conf: 'Låg säkerhet', range: '6–12', unit: 'månader', from: addDays(TODAY, 182), to: addDays(TODAY, 365),
+      factors: [['Inget fibernät i området', 'bad'], ['Utbyggnad beslutas när 60 % av hushållen anmält intresse (just nu 38 %)', 'bad'], ['Grävtillstånd från kommunen är inte beviljat', 'bad']] };
   }
   const bizBetween = (a, b) => { let n = 0; const x = new Date(a); while (x < b) { x.setDate(x.getDate() + 1); if (x.getDay() % 6) n++; } return n; };
 
@@ -354,12 +368,12 @@ button:disabled { cursor: default; }
       : k === 'B' ? 'Fibern behöver dras de sista cirka 25 metrarna in i huset. Det är den största delen av tiden.'
       : 'Det finns inget fibernät här ännu. Jag vill vara ärlig med att det tar tid, men det finns sätt att påskynda och att klara sig under tiden.';
     await bot([`${custom ? '<em>(Demo: okänd adress visas som scenario B.)</em> ' : ''}Här är min preliminära bedömning för <strong>${esc(state.addr.street)}</strong>:`],
-      `<div class="verdict ${e.level}"><span class="pill ${e.level}">${e.conf}</span>
+      `<div class="verdict"><span class="pill">${e.conf}</span>
         <div class="big">${e.range} ${e.unit}</div>
         <div>${state.addr.net}. Tidigast ${fmt(e.from)}, senast cirka ${fmt(e.to)}.</div></div>
        <ul class="factors">${e.factors.map(([t, l]) => `<li class="${l}">${t}</li>`).join('')}</ul>
        <p class="hint">${extra} Bedömningen blir säkrare när vi vet mer, och du ser den uppdateras i panelen till höger.</p>`);
-    if (k === 'A') askSpeed(); else if (k === 'B') askDigging(); else branchC();
+    if (k === 'A') askNeeds(); else if (k === 'B') askDigging(); else branchC();
   }
 
   async function askDigging() {
@@ -374,17 +388,68 @@ button:disabled { cursor: default; }
       state.digging = v; user($('strong', b).textContent); render();
       const e = estimate();
       await bot([`Uppdaterat: <strong>${e.range} ${e.unit}</strong>. ${v === 'self' ? 'Vi kopplar in så snart du meddelat att schaktet är klart.' : 'Vår entreprenör har lediga grävveckor i ditt område.'}`]);
-      next(askSpeed)();
+      next(askNeeds)();
     });
+  }
+
+  const pick = (card, sel) => new Promise(res => onPick(card, sel, (v, b) => { user(b.textContent); res(v); }));
+  const lbl = (list, k) => list.find(x => x[0] === k)[1];
+
+  async function askNeeds() {
+    state.step = 1; render();
+    if (state.needs !== null) return askSpeed();
+    const c1 = await bot(['Innan vi väljer hastighet vill jag förstå hur ni använder internet, så att du varken betalar för mycket eller får för lite. Tre snabba frågor.', 'Hur många i hushållet använder internet?'],
+      `<div class="choices">${USERS.map(([k, t]) => `<button class="chip" data-v="${k}">${t}</button>`).join('')}</div>
+       <button class="ghost" data-v="skip">Hoppa över, jag vet vad jag vill ha</button>`);
+    const users = await pick(c1, 'button');
+    if (users === 'skip') { state.needs = false; return askSpeed(); }
+    const c2 = await bot(['Vad använder ni internet till? Välj allt som stämmer.'],
+      `<div class="choices">${USES.map(([k, t]) => `<button class="chip" data-v="${k}" aria-pressed="false">${t}</button>`).join('')}</div>
+       <button class="primary" id="usesOk" disabled>Klar</button>`);
+    const uses = await new Promise(res => {
+      c2.querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => {
+        b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+        $('#usesOk', c2).disabled = !c2.querySelector('[aria-pressed="true"]');
+      }));
+      $('#usesOk', c2).addEventListener('click', () => {
+        const sel = [...c2.querySelectorAll('[aria-pressed="true"]')];
+        lock(c2); sel.forEach(b => b.classList.add('chosen'));
+        user(sel.map(b => b.textContent).join(', ')); res(sel.map(b => b.dataset.v));
+      });
+    });
+    const c3 = await bot(['Sista frågan: hur viktigt är priset jämfört med prestanda?'],
+      `<div class="choices">${PRICE.map(([k, t]) => `<button class="chip" data-v="${k}">${t}</button>`).join('')}</div>`);
+    const price = await pick(c3, '.chip');
+    state.needs = { users, uses, price }; render();
+    askSpeed();
+  }
+
+  function recommend(n) {
+    const need = USERS.find(x => x[0] === n.users)[2] + n.uses.reduce((t, k) => t + USES.find(x => x[0] === k)[2], 0);
+    let i = SPEEDS.findIndex(sp => sp.mbit >= need); if (i < 0) i = SPEEDS.length - 1;
+    let note = '';
+    if (n.price === 'low' && i > 0 && need <= SPEEDS[i - 1].mbit * 1.4) { i--; note = `Eftersom priset är viktigast för er föreslår jag ett steg lägre. Den räcker i vardagen och sparar ${kr(SPEEDS[i + 1].price - SPEEDS[i].price)} per månad. Det kan bli lite trångt när alla är uppkopplade samtidigt.`; }
+    else if (n.price === 'high' && i < SPEEDS.length - 1) { i++; note = 'Ni vill ha bästa prestanda, så jag föreslår ett steg upp för att ge marginal.'; }
+    return { sp: SPEEDS[i], need, note };
   }
 
   async function askSpeed() {
     state.step = 1; render();
-    const c = await bot(['Nu väljer vi hastighet. Ni som arbetar hemifrån och streamar i flera rum brukar klara er bra med 500/500.'],
+    const n = state.needs, r = n ? recommend(n) : null;
+    const intro = r
+      ? [`Utifrån era svar (${lbl(USERS, n.users).toLowerCase()}, ${n.uses.map(k => lbl(USES, k).toLowerCase()).join(', ')}) uppskattar jag att ni behöver cirka <strong>${r.need} Mbit/s</strong> när flest är uppkopplade samtidigt.`,
+         `Jag rekommenderar <strong>${r.sp.name}</strong> för ${kr(r.sp.price)} per månad.${r.note ? ' ' + r.note : ''}`]
+      : ['Här är våra hastigheter. Säg till om du vill att jag hjälper dig välja.'];
+    const c = await bot(intro,
       `<h4>Välj bredband</h4>
-       <div class="opts">${SPEEDS.map(s => `<button class="opt" data-v="${s.id}">${s.rec ? '<span class="badge">Rekommenderas</span>' : ''}<strong>${s.name}</strong><small>${s.small}</small><span class="price">${kr(s.price)}/mån</span></button>`).join('')}</div>
-       <p class="hint">Router ingår. Ingen bindningstid i demon. Månadsavgiften börjar först när fibern är aktiv.</p>`);
-    onPick(c, '.opt', (v, b) => { state.speed = v; user($('strong', b).textContent); render(); next(askIdentity)(); });
+       <div class="opts">${SPEEDS.map(sp => `<button class="opt" data-v="${sp.id}">${r && sp.id === r.sp.id ? '<span class="badge">Rekommenderas för er</span>' : ''}<strong>${sp.name}</strong><small>${sp.small}</small>${r ? `<span class="why ${sp.mbit >= r.need ? 'good' : 'bad'}">${sp.mbit >= r.need ? 'Räcker för ert behov' : 'Under ert uppskattade behov'}</span>` : ''}<span class="price">${kr(sp.price)}/mån</span></button>`).join('')}</div>
+       <p class="hint">Router ingår. Ingen bindningstid i demon. Du kan byta hastighet när som helst. Månadsavgiften börjar först när fibern är aktiv.</p>`);
+    onPick(c, '.opt', async (v, b) => {
+      state.speed = v; user($('strong', b).textContent); render();
+      const sp = SPEEDS.find(x => x.id === v);
+      if (r && sp.mbit < r.need) await bot([`Det fungerar, men det kan bli segt när många är uppkopplade samtidigt. Du kan uppgradera när som helst utan kostnad.`]);
+      next(askIdentity)();
+    });
   }
 
   async function askIdentity() {
@@ -440,19 +505,34 @@ button:disabled { cursor: default; }
       });
       return;
     }
-    const e = estimate();
     const first = mondayOf(addBiz(TODAY, 12));
-    const weeks = [0, 1, 2, 3].map(i => addDays(first, i * 7));
+    const weeks = Array.from({ length: 8 }, (_, i) => addDays(first, i * 7));
+    const iso = d => d.toISOString().slice(0, 10);
     const self = state.digging === 'self';
     const c = await bot([self ? 'Ange vilken vecka ditt schakt är klart. Vi kommer och blåser in fibern den veckan.' : 'Först bokar vi grävningen. Den tar 1–2 dagar under vald vecka, du behöver inte vara hemma.'],
       `<h4>${self ? 'Mitt schakt är klart vecka' : 'Grävning och indragning, vecka'}</h4>
-       <div class="slots">${weeks.map(w => `<button class="opt" data-v="${w.toISOString()}"><strong>Vecka ${weekNo(w)}</strong><small>${fmt(w, { day: 'numeric', month: 'short' })}–${fmt(addDays(w, 4), { day: 'numeric', month: 'short' })}</small>${isFrost(w) ? '<small>Risk för tjäle</small>' : ''}</button>`).join('')}</div>`);
-    onPick(c, '.opt', async (v, b) => {
-      state.digWeek = new Date(v); user($('strong', b).textContent); render();
+       <div class="slots">${weeks.map(w => `<button class="opt" data-v="${iso(w)}"><strong>Vecka ${weekNo(w)}</strong><small>${fmt(w, { day: 'numeric', month: 'short' })}–${fmt(addDays(w, 4), { day: 'numeric', month: 'short' })}</small></button>`).join('')}</div>
+       <div class="field"><label for="digDate">Eller välj ett annat datum</label><input type="date" id="digDate" min="${iso(first)}" max="${iso(addDays(TODAY, 200))}"></div>
+       <div class="alert" id="frostAlert" hidden><span><strong>Tjäle kan försena grävningen.</strong> Du har valt en vecka mellan december och mars. När marken är frusen kan grävningen behöva flyttas, och då hör vi av oss direkt med en ny tid. Välj en vecka före december om du vill vara säker.</span></div>
+       <button class="primary" id="digOk" disabled>Välj en vecka</button>`);
+    let chosen = null;
+    const choose = d => {
+      chosen = mondayOf(d);
+      c.querySelectorAll('.slots .opt').forEach(b => b.classList.toggle('chosen', b.dataset.v === iso(chosen)));
+      const fr = frostWeek(chosen);
+      $('#frostAlert', c).hidden = !fr;
+      $('#digOk', c).disabled = false;
+      $('#digOk', c).textContent = `Boka vecka ${weekNo(chosen)}${fr ? ' ändå' : ''}`;
+    };
+    c.querySelectorAll('.slots .opt').forEach(b => b.addEventListener('click', () => { $('#digDate', c).value = ''; choose(new Date(b.dataset.v + 'T12:00:00')); }));
+    $('#digDate', c).addEventListener('change', e => { if (e.target.value) choose(new Date(e.target.value + 'T12:00:00')); });
+    $('#digOk', c).addEventListener('click', async () => {
+      lock(c, $('#digOk', c));
+      state.digWeek = chosen; user(`Vecka ${weekNo(chosen)}`); render();
       const base = addBiz(addDays(state.digWeek, 4), 3);
       const slots = [];
       for (let i = 0; i < 4; i++) { const d = addBiz(base, i); slots.push([d, 'Förmiddag', '08–12'], [d, 'Eftermiddag', '12–16']); }
-      const c2 = await bot([`Tack. Bedömningen är nu <strong>${estimate().range} ${estimate().unit}</strong>. Nu bokar vi teknikern som kopplar in fibern i huset. Någon över 18 år behöver vara hemma, besöket tar cirka 2 timmar.`],
+      const c2 = await bot([`Tack. Bedömningen är nu <strong>${estimate().range} ${estimate().unit}</strong>.${frostWeek(chosen) ? ' Jag har lagt till marginal för tjälen.' : ''} Nu bokar vi teknikern som kopplar in fibern i huset. Någon över 18 år behöver vara hemma, besöket tar cirka 2 timmar.`],
         `<h4>Inkoppling i huset</h4>
          <div class="slots">${slots.map(([d, p, t], i) => `<button class="opt" data-v="${i}"><strong>${fmt(d)}</strong><small>${p} ${t}</small></button>`).join('')}</div>`);
       onPick(c2, '.opt', async (i) => {
@@ -503,6 +583,7 @@ button:disabled { cursor: default; }
     const rows = [
       ['Adress', `${esc(a.street)}${a.city ? ', ' + a.city : ''}`, null],
       ...(state.scenario === 'B' ? [['Grävning', state.digging === 'we' ? 'Ni sköter allt' : 'Jag gräver själv', 'dig']] : []),
+      ...(state.needs ? [['Behov', `${lbl(USERS, state.needs.users)}, cirka ${recommend(state.needs).need} Mbit/s, ${lbl(PRICE, state.needs.price).toLowerCase()}`, 'needs']] : []),
       ['Tjänst', `${co.sp.name}, ${kr(co.sp.price)}/mån`, 'speed'],
       ['Kontakt', `${esc(state.customer.name)}, ${esc(state.customer.email)}`, 'id'],
       ['Router levereras till', esc(state.delivery), 'deliv'],
@@ -518,7 +599,7 @@ button:disabled { cursor: default; }
     $('#confirm', c).addEventListener('click', () => { lock(c, $('#confirm', c)); user('Bekräfta beställning'); confirmOrder(); });
     c.querySelectorAll('.edit').forEach(b => b.addEventListener('click', () => {
       lock(c); state.edit = true; user(`Ändra ${b.closest('.sum-sec').querySelector('.k').textContent.toLowerCase()}`);
-      ({ dig: askDigging, speed: askSpeed, id: askIdentity, deliv: askDelivery, book: askBooking, pay: askPayment })[b.dataset.e]();
+      ({ needs: () => { state.needs = null; askNeeds(); }, dig: askDigging, speed: askSpeed, id: askIdentity, deliv: askDelivery, book: askBooking, pay: askPayment })[b.dataset.e]();
     }));
   }
 
@@ -573,17 +654,19 @@ button:disabled { cursor: default; }
     if (e) {
       const span = e.to - TODAY, pos = d => Math.max(0, Math.min(100, (d - TODAY) / span * 100));
       const booked = state.slot ? `<div class="today" style="left:${pos(state.slot.date)}%;background:var(--accent)" title="Bokad"></div>` : '';
-      est = `<div class="est-head"><span class="est-range">${e.range} <small style="font-size:15px;font-weight:500">${e.unit}</small></span><span class="pill ${e.level}">${e.conf}</span></div>
+      est = `<div class="est-head"><span class="est-range">${e.range} <small style="font-size:15px;font-weight:500">${e.unit}</small></span><span class="pill">${e.conf}</span></div>
         <div class="timeline" aria-label="Tidslinje från idag till senaste datum">
           <div class="track"></div><div class="band" style="left:${pos(e.from)}%;right:0"></div><div class="today"></div>${booked}
           <span class="lbl" style="left:0">Idag</span><span class="lbl" style="right:0">${fmt(e.to, { day: 'numeric', month: 'short' })}</span>
         </div>
-        <ul class="factors">${e.factors.map(([t, l]) => `<li class="${l}">${t}</li>`).join('')}</ul>`;
+        <ul class="factors">${e.factors.map(([t, l]) => `<li class="${l}">${t}</li>`).join('')}</ul>
+        <ul class="factors legend"><li class="good">Klart, godkänt</li><li class="bad">Inte klart eller inte godkänt</li></ul>`;
     }
 
     const kv = [];
     if (a) kv.push(['Installation', `${esc(a.street)}`]);
     if (state.scenario === 'B' && state.digging) kv.push(['Grävning', state.digging === 'we' ? 'Vi gräver' : 'Du gräver']);
+    if (state.needs) kv.push(['Behov', `${lbl(USERS, state.needs.users)}, ~${recommend(state.needs).need} Mbit/s`]);
     if (co.sp) kv.push(['Tjänst', co.sp.name]);
     if (state.customer) kv.push(['Kund', esc(state.customer.name)]);
     if (state.delivery) kv.push(['Router till', esc(state.delivery.split(' (')[0])]);
@@ -592,7 +675,7 @@ button:disabled { cursor: default; }
     if (state.method) kv.push(['Faktura', PAY[state.method].name]);
 
     const order = kv.length ? `<dl class="kv">${kv.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>` : '<p class="empty">Dina val samlas här medan du pratar med assistenten.</p>';
-    const money = co.sp || co.connect ? `<div class="totals"><div class="total"><div class="k">Per månad</div><div class="v">${kr(co.monthlyTotal)}</div></div><div class="total"><div class="k">Engång</div><div class="v">${kr(co.connect)}</div></div></div>${co.split ? `<p class="note">Varav ${kr(co.split)}/mån delbetalning i 24 månader.</p>` : ''}` : '';
+    const money = co.sp || co.connect ? `<div class="totals"><div class="total"><div class="k">Per månad</div><div class="v">${co.sp ? kr(co.monthlyTotal) : 'Ej vald'}</div></div><div class="total"><div class="k">Engång</div><div class="v">${kr(co.connect)}</div></div></div>${co.split ? `<p class="note">Varav ${kr(co.split)}/mån delbetalning i 24 månader.</p>` : ''}` : '';
 
     let status = '';
     if (state.confirmed && state.scenario !== 'C') {

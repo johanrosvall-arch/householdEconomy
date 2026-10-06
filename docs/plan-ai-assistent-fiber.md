@@ -24,7 +24,8 @@ Avgränsning: prototypen är en demonstration med fiktiva adresser, priser och t
 5. **Allt går att ändra före bekräftelse.** Sammanfattningen har "Ändra" på varje del, och kunden behöver inte börja om.
 6. **Tre adresser hålls isär tydligt.** Installationsadress (där fibern dras), leveransadress (dit routern skickas) och fakturaadress.
 7. **Människa nära till hands.** "Prata med en person" finns alltid, och hela kontexten följer med vid överlämning.
-8. **Kommunikation efter köp.** Resan slutar inte vid bekräftelse. Kunden följer ordern i en statusvy med proaktiva besked.
+8. **Två statusfärger, inget annat.** Grönt betyder att en aktivitet är klar eller godkänd. Rött betyder att den inte är klar eller inte godkänd. Färgerna kompletteras alltid med en symbol (bock eller kryss) så att de fungerar även för färgblinda. Varumärkesfärgen är blå så att den aldrig kan förväxlas med en status.
+9. **Kommunikation efter köp.** Resan slutar inte vid bekräftelse. Kunden följer ordern i en statusvy med proaktiva besked.
 
 ## 3. Kundresan steg för steg
 
@@ -38,13 +39,21 @@ Kunden anger adress. Assistenten slår upp nätstatus och ger direkt:
 - **Scenario B, fiber finns i tomtgräns men inte indragen:** 4–8 veckor, medelsäkerhet. Kräver grävning på tomten, håltagning och inkoppling.
 - **Scenario C, inget fibernät i området:** 6–12 månader, låg säkerhet. Kräver utbyggnad som beror på hur många grannar som anmäler intresse. Kunden erbjuds intresseanmälan och ett tillfälligt mobilt bredband.
 
-Varje bedömning visar: tidsintervall, tidigaste och senaste datum, säkerhetsnivå och faktorer ("cirka 25 m grävning på tomt", "tjäle kan försena grävning december till mars").
+Varje bedömning visar: tidsintervall, tidigaste och senaste datum, säkerhetsnivå och en lista med aktiviteter som behöver vara klara (till exempel "Grävning är inte bokad", "Inkoppling med tekniker bokad").
 
 ### Steg 2. Förutsättningar på tomten (endast scenario B)
 Vem gräver på tomten? "Vi sköter allt" eller "Jag gräver själv" (lägre pris, men kunden ansvarar för att schaktet är klart till ett visst datum). Valet uppdaterar både pris och tidsbedömning direkt, vilket är ett tydligt demoögonblick.
 
-### Steg 3. Val av tjänst
-Hastigheter med månadspris. Assistenten rekommenderar en nivå utifrån enkla frågor om hushållet och förklarar varför. Tillval (tv, telefoni) kan läggas till.
+### Steg 3. Behovsanalys och val av tjänst
+Innan produkterna visas gör assistenten en kort behovsanalys med tre frågor, en i taget:
+
+1. Hur många i hushållet använder internet? (1, 2–3, 4–5, 6 eller fler)
+2. Vad används internet till? Flerval: surf och mejl, streaming, hemarbete och videomöten, onlinespel, stora filer och uppladdning.
+3. Hur viktigt är priset? Lägsta pris, en bra balans eller bästa prestanda.
+
+Svaren ger ett uppskattat behov i Mbit/s när flest är uppkopplade samtidigt. Assistenten rekommenderar den minsta hastighet som räcker. Om priset är viktigast och behovet ligger nära en lägre nivå föreslås den lägre nivån, med besparingen per månad och en tydlig upplysning om nackdelen. Om prestanda är viktigast föreslås ett steg upp. Varje produktkort visar om den räcker för behovet. Kunden kan hoppa över analysen, och väljer kunden en lägre hastighet än behovet säger assistenten det vänligt utan att stoppa köpet. Tillval (tv, telefoni) kan läggas till.
+
+I prototypen är behovsberäkningen en enkel tumregel. I en riktig lösning bör den kalibreras mot faktisk användningsdata.
 
 ### Steg 4. Identifiering och kunduppgifter
 Mobilt BankID (mockat) fyller i namn och personnummer. Kontaktuppgifter bekräftas. Kreditkontroll nämns tydligt innan den görs.
@@ -56,6 +65,7 @@ Mobilt BankID (mockat) fyller i namn och personnummer. Kontaktuppgifter bekräft
 
 ### Steg 6. Leveransdatum och bokning av installation
 - Scenario B har två bokningar: grävning och indragning (en vecka) samt inkoppling i huset (förmiddag eller eftermiddag).
+- Grävveckan väljs bland föreslagna veckor eller med en datumväljare. Väljer kunden en vecka mellan december och mars visas en varning direkt i datumväljaren: tjäle kan försena grävningen. Kunden kan välja en tidigare vecka eller boka ändå, och tidsbedömningen får då extra marginal.
 - Routern levereras automatiskt cirka 5 dagar före inkopplingen så att den inte ligger och väntar i veckor.
 - Abonnemanget och månadsavgiften startar först när tjänsten är aktiv.
 - Checklista före besöket: någon över 18 år hemma, fri väg till platsen för fiberuttaget, markera ledningar på tomten.
@@ -78,6 +88,7 @@ Statusvy med milstolpar: Order mottagen, Grävning bokad, Grävning klar, Router
 |---|---|
 | Ton | Kort, vardaglig svenska. Inga tekniska termer utan förklaring ("nod", "CPE"). |
 | Gränssnitt | Hybrid: chatt för dialog, kort och knappar för val, panel för helheten. |
+| Rådgivning | Ställ frågor om behov innan produkter visas. Rekommendera det som räcker, inte det dyraste, och förklara varför. |
 | Osäkerhet | Ange alltid intervall och säkerhetsnivå. Lova aldrig exakt datum före bokning. |
 | Förklarbarhet | "Varför tar det så lång tid?" ska alltid kunna besvaras med de faktiska faktorerna. |
 | Gränser | Assistenten ändrar inga priser och ger inga juridiska besked. Den hänvisar till villkor och personal. |
